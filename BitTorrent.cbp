@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="BitTorrent" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/BitTorrent" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/BitTorrent" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="src/bitfield.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/bitfield.h" />
+		<Unit filename="src/bterror.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/bterror.h" />
+		<Unit filename="src/data.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/data.h" />
+		<Unit filename="src/log.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/log.h" />
+		<Unit filename="src/message.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/message.h" />
+		<Unit filename="src/parse_metafile.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/parse_metafile.h" />
+		<Unit filename="src/peer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/peer.h" />
+		<Unit filename="src/signal_hander.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/signal_hander.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
