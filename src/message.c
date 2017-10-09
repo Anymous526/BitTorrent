@@ -2,9 +2,9 @@
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
-#include <stblib.h>
+#include <stdlib.h>
 #include <time.h>
-#include <sys/oscket.h>
+#include <sys/socket.h>
 #include "parse_metafile.h"
 #include "bitfield.h"
 #include "peer.h"

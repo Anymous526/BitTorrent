@@ -505,4 +505,3 @@ int parse_metafile(char *metafile) {
 
 }
 
-#endif // PASE_METAFILE

@@ -47,6 +47,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/log.h" />
+		<Unit filename="src/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/message.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -59,10 +62,26 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/peer.h" />
+		<Unit filename="src/policy.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/policy.h" />
+		<Unit filename="src/sha1.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sha1.h" />
 		<Unit filename="src/signal_hander.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/signal_hander.h" />
+		<Unit filename="src/torrent.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/torrent.h" />
+		<Unit filename="src/tracker.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/tracker.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

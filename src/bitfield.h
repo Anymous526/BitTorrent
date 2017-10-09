@@ -1,12 +1,12 @@
-//bitfield.h
 #ifndef BITFIELD_H
-#define BITFILED_H
+#define BITFIELD_H
 
-typedef struct _Bitmap{
+typedef struct _Bitmap {
     unsigned char *bitfield;
     int     bitfield_length;
     int     valid_length;
 }Bitmap;
+
 
 int create_bitfield();
 int get_bit_value(Bitmap *bitmap, int index);

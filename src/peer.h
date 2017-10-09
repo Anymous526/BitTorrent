@@ -22,22 +22,22 @@ typedef struct _Request_piece {
 }Request_piece;
 
 typedef struct _Peer{
-    int socket;
-    char ip[16];
-    unsigned short port;
-    char id[21];
+    int             socket;
+    char            ip[16];
+    unsigned short  port;
+    char            id[21];
 
-    int state;
-    int am_choking;
-    int am_interested;
-    int peer_choking;
-    int peer_interested;
+    int     state;
+    int     am_choking;
+    int     am_interested;
+    int     peer_choking;
+    int     peer_interested;
 
-    Bitmap bitmap;
+    Bitmap  bitmap;
 
-    char *in_buff;
-    int    buff_len;
-    char *out_msg;
+    char    *in_buff;
+    int     buff_len;
+    char    *out_msg;
     int     msg_len;
     char    *out_msg_copy;
     int     msg_copy_len;
@@ -49,14 +49,14 @@ typedef struct _Peer{
     unsigned int down_total;
     unsigned int up_total;
 
-    time_t  start_timestamp;
-    time_t  recet_timestamp;
-    time_t  last_down_timestamp;
-    time_t  last_up_timestamp;
-    long long  down_count;
-    long long up_count;
-    float  down_state;
-    float  up_state;
+    time_t      start_timestamp;
+    time_t      recet_timestamp;
+    time_t      last_down_timestamp;
+    time_t      last_up_timestamp;
+    long long   down_count;
+    long long   up_count;
+    float       down_state;
+    float       up_state;
 
     struct _Peer  *next;
 

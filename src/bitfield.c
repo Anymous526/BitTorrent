@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <malloc.h>
@@ -8,11 +8,11 @@
 #include "parse_metafile.h"
 #include "bitfield.h"
 
-extern int pieces_length;
+extern int  pieces_length;
 extern char *file_name;
 
 Bitmap *bitmap = NULL;
-int     download_pices_num = 0;
+int     download_piece_num = 0;
 
 int create_bitfield() {
     bitmap = (Bitmap*)malloc(sizeof(Bitmap));
@@ -34,6 +34,7 @@ int create_bitfield() {
 
     char bitmapfile[64];
     sprintf(bitmapfile, "%dbitmap", pieces_length);
+
     int i;
     FILE *fp = fopen(bitmapfile,"rb");
     if(fp == NULL) {
@@ -60,7 +61,7 @@ int get_bit_value(Bitmap *bitmap, int index) {
     inner_byte_index = index % 8;
 
     byte_value = byte_value >> ( 7 - inner_byte_index);
-    if(byte_value %2 == 0) ret = 0
+    if(byte_value %2 == 0) ret = 0;
     else ret = 1;
 
     return ret;
@@ -103,9 +104,9 @@ int restore_bitmap(){
 
     if(bitmap == NULL || (file_name == NULL)) return -1;
     sprintf(bitmapfile, "%dbitmap",  pieces_length);
-    fd = open(bitmapfile, O_RDWD|O_CREAT|O_TRUNC, 0666);
+    fd = open(bitmapfile, O_RDWR|O_CREAT|O_TRUNC, 0666);
     if(fd < 0) return -1;
-    write(fd bitmap->bitfield, bitmap->bitfield_length);
+    write(fd, bitmap->bitfield, bitmap->bitfield_length);
     close(fd);
 
     return 0;
@@ -166,18 +167,19 @@ int get_download_piece_num(){
 
 
 /* Test*/
-int test{
+int test(){
     Bitmap map1, map2;
-    unsigned char bf1[2]= }{oxa0, oxa0};
-    unsigned char bf1[2]= }{oxe0, oxe0};
+    unsigned char bf1[2]= {0xa0, 0xa0};
+    unsigned char bf2[2]= {0xe0, 0xe0};
 
     map1.bitfield = bf1;
-    map1.bitfield_lenght = 2;
-    map1.valid_lenght = 1l';
+    map1.bitfield_length = 2;
+    map1.valid_length = 1l;
 
     map2.bitfield = bf2;
-    map2.bitfield_lenght = 2;
-    map2.valid_lenght = 1l';
+    map2.bitfield_length = 2;
+    map2.valid_length = 1l;
 
+    int ret = is_interested(&map1, &map2);
     prinf("%d\n", is_interested(&map1, &map2));
 }

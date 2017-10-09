@@ -1,4 +1,3 @@
-//parse_metafile.h
 #ifndef PASE_METAFILE
 #define PASE_METAFILE
 
