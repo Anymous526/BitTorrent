@@ -6,22 +6,22 @@
 #include <time.h>
 #include "parse_metafile.h"
 
-char    *metafile_content = NULL;
-long    fileszie;
+char    *metafile_content = NULL;  //保存种子文件内容
+long    fileszie;                  //种子文件的长度
 
-char    piece_length = 0;
-char    *pieces = NULL;
-int     pieces_length =0;
+char    piece_length = 0;           //每一个piece的长度,通常为256kb即256*1024  = 262144字节
+char    *pieces = NULL;             //保存每个pieces的哈希值,每个哈希值 为 20字节
+int     pieces_length = 0;          //缓冲区pieces的长度
 
-int     multi_file = 0;
-char    *file_name = NULL;
-long    long file_length = 0;
-Files   *files_head = NULL;
+int     multi_file = 0;             //指明是单文件还是多文件
+char    *file_name = NULL;          //对于单文件,存放文件名,对于多文件,存放目录
+long    long file_length = 0;       //存放待下载文件的总长度
+Files   *files_head = NULL;         //只对多文件种子有效,存放各个文件的路径和长度
 
-unsigned char info_hash[20];
-unsigned char peer_id[20];
+unsigned char info_hash[20];        //保存info_hash的值,连接tracker和peer时使用
+unsigned char peer_id[20];          //保存peeer_id的值 ,连接peer时使用
 
-Announce_list *announce_list_head = NULL;
+Announce_list *announce_list_head = NULL;   //用户保存tracker服务器的URL
 
 int read_metafile(char *metafile_name) {
     long i;
@@ -46,13 +46,15 @@ int read_metafile(char *metafile_name) {
     }
 
     fseek(fp,0, SEEK_SET);
-    for(i = 0; i<filesize; i++)
+    for(i = 0; i < filesize; i++)
         metafile_content[i] = fgetc(fp);
     metafile_content[i] = '\0';
 
     fclose(fp);
 
     #ifdef DEBUG
+        puts("Metafile content:");
+        puts(metafile_content);
         printf("metafile size is: %ld\n", filesize);
     #endif // DEBUG
 
@@ -60,12 +62,12 @@ int read_metafile(char *metafile_name) {
 }
 
 int find_keyword(char *keyword, long *position){
-    long i;
+    //long i;
     *position = -1;
     if(keyword == NULL)
         return 0;
 
-    for(i = 0; i < filesize - strlen(keyword); i++) {
+    for(long i = 0; i < filesize - strlen(keyword); i++) {
         if(memcmp(&metafile_content[i], keyword, strlen(keyword)) == 0) {
             *position  = i;
             return 1;

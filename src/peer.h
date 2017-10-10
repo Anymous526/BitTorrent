@@ -12,7 +12,7 @@
 #define DATA            4
 #define CLOSING         5
 
-#define MSG_SIZE (22*1024 + 16*1024)
+#define MSG_SIZE (2*1024 + 16*1024)
 
 typedef struct _Request_piece {
     int index;
@@ -55,8 +55,8 @@ typedef struct _Peer{
     time_t      last_up_timestamp;
     long long   down_count;
     long long   up_count;
-    float       down_state;
-    float       up_state;
+    float       down_rate;
+    float       up_rate;
 
     struct _Peer  *next;
 
