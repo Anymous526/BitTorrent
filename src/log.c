@@ -8,8 +8,10 @@
 #include    <stdarg.h>
 #include    "log.h"
 
+//日志文件描述符
 int logfile_fd = -1;
 
+//在命令行上打印一条日志
 void logcmd(char *fmt, ...) {
     va_list ap;
 
@@ -18,6 +20,7 @@ void logcmd(char *fmt, ...) {
     va_end(ap);
 }
 
+//打开记录日志的文件
 int init_logfile(char *filename) {
     logfile_fd = open(filename, O_RDWR|O_CREAT|O_APPEND, 0666);
     if(logfile_fd < 0){
@@ -27,6 +30,8 @@ int init_logfile(char *filename) {
 
     return 0;
 }
+
+//将一条日志写入日志文件
 int logfile(char *file, int line, char *msg) {
     char buff[256];
     if(logfile_fd < 0) return -1;

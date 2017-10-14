@@ -20,7 +20,7 @@ int create_bitfield() {
         printf("allocate memory for bitmap failed\n");
         return -1;
     }
-
+    //pieces_length 除以20即为总的piece数
     bitmap->valid_length = pieces_length / 20;
     bitmap->bitfield_length = pieces_length / 20 /8;
     if((pieces_length/20) % 8 != 0 ) bitmap->bitfield_length++;
@@ -37,25 +37,28 @@ int create_bitfield() {
 
     int i;
     FILE *fp = fopen(bitmapfile,"rb");
-    if(fp == NULL) {
+    if(fp == NULL) { //若打开文件失败,说明开始的是一个全新的下载
         memset(bitmap->bitfield, 0, bitmap->bitfield_length);
     } else {
         fseek(fp, 0, SEEK_SET);
-        for(i =0; i<bitmap->bitfield_length; i++)
+        for(i = 0; i < bitmap->bitfield_length; i++)
             (bitmap->bitfield)[i] = fgetc(fp);
         fclose(fp);
+        //给down_piece_num 赋新的初值
         download_piece_num = get_download_piece_num();
     }
 
     return 0;
 }
+
 int get_bit_value(Bitmap *bitmap, int index) {
-    int ret;
-    int byte_index;
-    unsigned char byte_value;
-    unsigned char  inner_byte_index;
+    int             ret;
+    int             byte_index;
+    unsigned char   byte_value;
+    unsigned char   inner_byte_index;
 
     if(bitmap == NULL || index >= bitmap->valid_length) return -1;
+
     byte_index = index / 8;
     byte_value  = bitmap->bitfield[byte_index];
     inner_byte_index = index % 8;
@@ -67,7 +70,18 @@ int get_bit_value(Bitmap *bitmap, int index) {
     return ret;
 }
 
-int set_bit_value(Bitmap *bitmap, int index, unsigned char value){
+int set_bit_value(Bitmap *bitmap, int index, unsigned char v){
+    int byte_index;
+    unsigned char inner_byte_index;
+
+    if(bitmap == NULL || index>= bitmap->valid_length ) return -1;
+    if((v != 0) && (v != 1)) return -1;
+    byte_index = index /  8;
+    inner_byte_index = index % 8;
+    v = v << (7 - inner_byte_index);
+    bitmap->bitfield[byte_index] = bitmap->bitfield[byte_index] | v;
+
+    return 0;
 
 }
 
@@ -83,7 +97,9 @@ int all_set(Bitmap *bitmap) {
     memset(bitmap->bitfield, 0xff, bitmap->bitfield_length);
     return 0;
 }
+
 void release_memory_in_bitfield() {
+
     if(bitmap->bitfield != NULL) free(bitmap->bitfield);
     if(bitmap != NULL) free(bitmap);
 }
@@ -99,6 +115,7 @@ int print_bitfield(Bitmap *bitmap) {
 }
 
 int restore_bitmap(){
+
     int fd;
     char bitmapfile[64];
 
@@ -114,6 +131,7 @@ int restore_bitmap(){
 }
 
 int is_interested(Bitmap *dst, Bitmap *src) {
+
     unsigned char const_char[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
     unsigned   char c1, c2;
     int i,j;
@@ -122,26 +140,26 @@ int is_interested(Bitmap *dst, Bitmap *src) {
     if(dst->bitfield == NULL || src->bitfield == NULL ) return -1;
     if(dst->bitfield_length != src->bitfield_length || dst->valid_length != src->valid_length) return -1;
 
-    for(i = 0; i < dst->bitfield_length -1; i++) {
+    for(i = 0; i < dst->bitfield_length - 1; i++) {
         for(j = 0; j < 8; j++){
             c1 = (dst->bitfield)[i] & const_char[j];
             c2 = (src->bitfield)[i] & const_char[j];
-            if(c1>0 && c2 ==0)
-                return 1;
+            if(c1 > 0 && c2 == 0) return 1;
 
         }
     }
 
-    j = dst->valid_length %8;
-    c1 = dst->bitfield[dst->bitfield_length -1];
-    c2 = src->bitfield[src->bitfield_length -1];
-    for(i = 0; i<j; i++) {
+    j = dst->valid_length % 8;
+    c1 = dst->bitfield[dst->bitfield_length - 1];
+    c2 = src->bitfield[src->bitfield_length - 1];
+    for(i = 0; i < j; i++) {
         if( (c1&const_char[i]) > 0 && (c2&const_char[i]) == 0)
             return 1;
     }
 
-    return 1;
+    return 0;
 }
+
 int get_download_piece_num(){
     unsigned char const_char[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
     int i,j;
@@ -149,8 +167,8 @@ int get_download_piece_num(){
     if(bitmap == NULL || bitmap->bitfield == NULL) return 0;
     download_piece_num = 0;
 
-    for(i = 0; i< bitmap->bitfield_length -1; i++) {
-        for(j =0; j< 8; j++){
+    for(i = 0; i < bitmap->bitfield_length -1; i++) {
+        for(j = 0; j < 8; j++){
             if((bitmap->bitfield)[i] & const_char[j] != 0)
                 download_piece_num++;
         }

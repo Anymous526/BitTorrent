@@ -7,10 +7,12 @@
 
 extent Bitmap *bitmap;
 
+//指向当前与之进行通信的peer链表
 Peer *peer_head = NULL;
 
 
 int initialize_peer(Peer *peer){
+
     if(peer == NULL) return -1;
     peer->socket = -1;
     metset(peer->ip,0,16);
@@ -70,6 +72,7 @@ OUT:
     if(peer->out_msg_copy != NULL) free(peer->out_msg_copy);
     return -1;
 }
+
 Peer*   add_peer_node(){
     int ret;
     Peer *node, *p;
@@ -96,8 +99,11 @@ Peer*   add_peer_node(){
 
     return node;
 }
+
 int del_peer_node(Peer *peer) {
+
     Peer *p= peer_head, *q;
+
     if(peer == NULL) return -1;
 
     while(p != NULL){
@@ -115,13 +121,10 @@ int del_peer_node(Peer *peer) {
     return -1;
 }
 
-void free_peer_node(Peer *node);
-
 int cancel_request_list(Peer *node){
     Request_piece *p = node->Request_piece_head;
 
     while(p != NULL) {
-
         node->Request_piece_head = node->Request_piece_head->next;
         free(p);
         p = node->Request_piece_head;
@@ -137,7 +140,23 @@ int cancel_requested_list(Peer *node) {
         free(p);
         p = node->Requested_piece_head;
     }
+
+    return 0;
 }
+
+void free_peer_node(Peer *node) {
+    if(node  == NULL ) return;
+    if(node->bitmap.bitfield != NULL) free(node->bitmap.bitfield);
+    if(node->in_buff != NULL)  free(node->in_buff);
+    if(node->out_msg != NULL) free(node->out_msg);
+    if(node->out_msg_copy != NULL) free(node->out_msg_copy);
+    cancel_request_list(node);
+    cancel_requested_list(node);
+    free(node);
+}
+
+
+
 void release_memory_in_peer() {
     Peer *p;
     if(peer_head == NULL) return;
@@ -154,7 +173,7 @@ void print_peers_data() {
 	int  index = 0;
 
 	while(p != NULL) {
-		printf("peer: %d  down_rate: %.2f \n", index, p->down_rate);
+		printf("peer: %d IP %s  down_rate: %.2f \n", index,p->ip, p->down_rate);
 
 		index++;
 		p = p->next;
