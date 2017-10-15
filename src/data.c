@@ -12,14 +12,14 @@
 #include "sha1.h"
 #include "data.h"
 
-extern char *file_name;
-extern Files *files_head;
-extern int file_length;
-extern int piece_length;
-extern char *pieces;
-extern int pieces_length;
+extern char *file_name;             //待下载文件的文件名
+extern Files *files_head;           //对于我文件种子有效,存放各个文件的路径和长度
+extern int file_length;             //待下载文件的总长度
+extern int piece_length;            //每个piece的长度
+extern char *pieces;                //存放所有piece的hash值
+extern int pieces_length;           //缓冲区的piece的长度
 
-extern Bitmap *bitmap;
+extern Bitmap *bitmap;              //指向乙方的位图
 extern int download_piece_num;
 extern Peer *peer_head;
 
