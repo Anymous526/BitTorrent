@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #ifdef MINGW32
 #include <winsock2.h>
@@ -12,7 +13,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #endif
-
 
 #include "parse_metafile.h"
 #include "bitfield.h"
@@ -28,7 +28,7 @@
 #define     INTERESTED      2       //interested 消息
 #define     UNINTERESTED    3       //uninterested消息
 #define     HAVE            4       //hava消息
-#define     BUTFIELD        5       //bitfield消息
+#define     BITFIELD        5       //bitfield消息
 #define     REQUEST         6       //request 消息
 #define     PIECE           7       //piece消息
 #define     CANCEL          8       //cancel消息
@@ -40,7 +40,7 @@
 extern Bitmap   *bitmap;            //在bitmap.c中定义, 指向已方的位图
 extern char     info_hash[20];      //在parse_meatfile.c中定义, 存放info_hash
 extern char     peer_id[20];        //在parse_metafile.c中定义,存放peer_id
-extern char     hava_piece_index[64];   //在data.c中定义,存放下载的piece的index
+extern char     have_piece_index[64];   //在data.c中定义,存放下载的piece的index
 extern Peer     *peer_head;         //在peer.c中定义,指向peer链表
 
 int int_to_char(int i, unsigned char c[4]) {
@@ -60,17 +60,17 @@ int char_to_int(unsigned char c[4]) {
 
 int create_handshake_msg(char *info_hash, char *peer_id, Peer *peer) {
     // int i;
-    unsigned char keyword[20] = "BitTorrent protocol", c=0x00;
+    unsigned char keyword[20] = "BitTorrent protocol", c = 0x00;
     unsigned char *buffer = peer->out_msg + peer->msg_len;
     int len = MSG_SIZE - peer->msg_len;
 
     if(len < 68) return -1; //握手消息的长度为固定为68 字节
 
     buffer[0] = 19;
-    for(int i = 0; i < 19;i++) buffer[i+1] = keyword[i];
-    for(int i = 0; i < 8; i++) buffer[i+20] = c;
-    for(int i = 0; i < 20;i++) buffer[i+28] = info_hash[i];
-    for(int i = 0; i < 20;i++) buffer[i+48] = peer_id[i];
+    for(int i = 0; i < 19; i++) buffer[i+1] = keyword[i];
+    for(int i = 0; i < 8;  i++) buffer[i+20] = c;
+    for(int i = 0; i < 20; i++) buffer[i+28] = info_hash[i];
+    for(int i = 0; i < 20; i++) buffer[i+48] = peer_id[i];
 
     peer->msg_len += 68;
 
@@ -78,6 +78,7 @@ int create_handshake_msg(char *info_hash, char *peer_id, Peer *peer) {
 }
 
 int create_keep_alive_msg(Peer *peer){
+
     unsigned char *buffer = peer->out_msg + peer->msg_len;
     int len = MSG_SIZE - peer->msg_len;
 
@@ -103,6 +104,7 @@ int create_chock_interested_msg(int type, Peer *peer) {
 }
 
 int create_have_msg(int index,Peer *peer) {
+
     unsigned char *buffer = peer->out_msg + peer->msg_len;
     int len = MSG_SIZE - peer->msg_len;
     unsigned char c[4];
@@ -111,7 +113,7 @@ int create_have_msg(int index,Peer *peer) {
     memset(buffer,0,9);
     buffer[3] = 5;
     buffer[4] = 4;
-    int_to_char(index, c);
+    int_to_char(index, c);  //index为piece的下标
 
     buffer[5] = c[0];
     buffer[6] = c[1];
@@ -134,7 +136,7 @@ int create_bitfield_msg(char *bitfield, int bitfield_len, Peer *peer){
         printf("%s:%d buffer to small\n", __FILE__, __LINE__);
         return -1;
     }
-    int_to_char(bitfield_len+1, c);
+    int_to_char(bitfield_len+1, c); //位置消息的负载长度为位图长度加1
     for(int i = 0; i < 4; i++) buffer[i] = c[i];
     buffer[4] = 5;
     for(int i = 0; i < bitfield_len; i++) buffer[i+5] = bitfield[i];
@@ -214,7 +216,7 @@ int create_port_msg(int port, Peer *peer) {
 	unsigned char  *buffer = peer->out_msg + peer->msg_len;
 	int            len = MSG_SIZE - peer->msg_len;
 
-	if( len < 7)  return 0;  // 7为port消息的固定长度
+	if( len < 7)  return 0;  // port消息的固定长度 7
 
 	memset(buffer,0,7);
 	buffer[3] = 3;
@@ -298,6 +300,7 @@ int is_complete_messgae(unsigned char *buff, unsigned int len, int *ok_len) {
 }
 
 int process_handshake_msg(Peer *peer, unsigned char *buff, int len) {
+
     if(peer = NULL || buff == NULL) return -1;
     if(memcmp(info_hash, buff+28,20) != 0) { //若info_hash不一致则关闭
         peer->state = CLOSING;
@@ -323,6 +326,7 @@ int process_handshake_msg(Peer *peer, unsigned char *buff, int len) {
 }
 
 int process_keep_alive_msg(Peer *peer, unsigned char *buff, int len) {
+
     if(peer = NULL || buff == NULL) return -1;
     //若记录最近收到该pper消息的时候
     //若一定时间内(如2min)未收到该peer的任何消息,则关闭连接
@@ -335,7 +339,7 @@ int process_choke_msg(Peer *peer, unsigned char *buff, int len) {
     if(peer == NULL || buff == NULL) return -1;
     if(peer->state != CLOSING  && peer->peer_choking == 0) {
 
-        peer->peer_choking =1;
+        peer->peer_choking = 1;
         peer->last_down_timestamp = 0;  //将最近接收到来自该peer数据的时间清零
         peer->down_count =0;            //将最近从pper处下载的字节数清零
         peer->down_rate = 0;            //将最近从pper下载数据的速度清零
@@ -351,8 +355,8 @@ int process_unchoke_msg(Peer *peer, unsigned char *buff, int len) {
     //若原来处于choke状态且该peer连接未被关闭
     if(peer->state != CLOSING && peer->peer_choking == 1) {
         peer->peer_choking = 0;
-        //若对该peer感兴趣,则构造request消息请深圳市peer发送数据
-        if(peer->am_interested == 1){ create_req_slice_msg(peer)；}
+        //若对该peer感兴趣,则构造request消息请求peer发送数据
+        if(peer->am_interested == 1){ create_req_slice_msg(peer);}
         else {
             peer->am_interested = is_interested(&(peer->bitmap), bitmap);
             if(peer->am_interested == 1) create_req_slice_msg(peer);
@@ -372,11 +376,12 @@ int process_interested_msg(Peer *peer, unsigned char *buff, int len) {
 
     if(peer == NULL || buff == NULL) return -1;
 
-    if(peer->state !=CLOSING && peer->state ==DATA) {
+    if(peer->state !=CLOSING && peer->state == DATA) {
         peer->peer_interested = is_interested(bitmap, &(peer->bitmap));
         if(peer->peer_interested == 0) return -1;
         if(peer->am_choking == 0) create_chock_interested_msg(1, peer);
     }
+
     peer->start_timestamp = time(NULL);
     return 0;
 }
@@ -385,7 +390,7 @@ int process_uninterested_msg(Peer *peer, unsigned char *buff, int len){
 
     if(peer == NULL || buff == NULL) return -1;
 
-    if(peer->state != CLOSING && peer->state == DATE){
+    if(peer->state != CLOSING && peer->state == DATA ){
         peer->peer_interested = 0;
         cancel_requested_list(peer);
     }
@@ -403,9 +408,9 @@ int process_have_msg(Peer *peer, unsigned char *buff, int len) {
     srand(time(NULL));
     rand_num = rand() % 3; //生成一个 0-2的随机数
     if(peer->state != CLOSING && peer->state == DATA) {
-        c[0] = buffer[5]; c[1] = buffer[6];
-        c[2] = buffer[7]; c[3] = buffer[8];
-        //更新该pper的位置
+        c[0] = buff[5]; c[1] = buff[6];
+        c[2] = buff[7]; c[3] = buff[8];
+        //更新该peer的位置
         if(peer->bitmap.bitfield != NULL)
             set_bit_value(&(peer->bitmap), char_to_int(c), 1);
         if(peer->am_interested == 0) {
@@ -422,7 +427,6 @@ int process_have_msg(Peer *peer, unsigned char *buff, int len) {
 }
 
 int process_cancel_msg(Peer *peer, unsigned char *buff, int len){
-
 
     unsigned char c[4];
 	int           index, begin, length;
@@ -457,21 +461,21 @@ int process_cancel_msg(Peer *peer, unsigned char *buff, int len){
 	return 0;
 }
 
-int process_bitfield_msg(Peer *peer, *unsigned char *buff, int len) {
+int process_bitfield_msg(Peer *peer, unsigned char *buff, int len) {
 
     unsigned char c[4];
     if(peer == NULL && buff == NULL) return -1;
 
-    if(peer->state == HANDSHAKE || peer->state == SENDBITFIELD) {
-        c[0] = buffer[0]; c[1] = buffer[1];
-        c[2] = buffer[2]; c[3] = buffer[3];
+    if(peer->state == HANDSHAKE || peer->state ==  SENDBITFIELD) {
+        c[0] = buff[0]; c[1] = buff[1];
+        c[2] = buff[2]; c[3] = buff[3];
         //若原先已经收到一个位置消息,则清空原来的位图
         if(peer->bitmap.bitfield != NULL) {
             free(peer->bitmap.bitfield);
             peer->bitmap.bitfield = NULL;
         }
 
-        peer->bimap.valid_length = bitmap->valid_length;
+        peer->bitmap.valid_length = bitmap->valid_length;
         if(bitmap->bitfield_length != char_to_int(c) -1) { //若收到一个错误的位图
             peer->state = CLOSING;
             //丢弃发送缓冲区中的数据
@@ -484,14 +488,15 @@ int process_bitfield_msg(Peer *peer, *unsigned char *buff, int len) {
         peer->bitmap.bitfield_length = char_to_int(c) -1;
         peer->bitmap.bitfield = (unsigned char*)malloc(peer->bitmap.bitfield_length);
         memcpy(peer->bitmap.bitfield, &buff[5], peer->bitmap.bitfield_length);
+
         //如果原状态为已握,收到位图后应该向peer发位图
         if(peer->state == HANDSHAKED) {
             create_bitfield_msg(bitmap->bitfield, bitmap->bitfield_length, peer);
             peer->state = DATA;
         }
         //如果原状态为已经发送位图,收到位图后可以进行data状态装备交换数据
-        if(peer->state == SENDBITFIELD) {
-            peer->state = DATE;
+        if(peer->state ==   SENDBITFIELD) {
+            peer->state = DATA;
         }
         //根据位图判断peer是否对本客户端感兴趣
         peer->peer_interested = is_interested(bitmap, &(peer->bitmap));
@@ -526,7 +531,7 @@ int process_request_msg(Peer *peer, unsigned char *buff, int len) {
         c[0] = buff[13]; c[1] = buff[14];
         c[2] = buff[15]; c[3] = buff[16];
         length = char_to_int(c);
-        //查看该请深圳市是否已存在,若已经存在,则不进行处理
+        //查看该请求是否已存在,若已经存在,则不进行处理
         p = peer->Requested_piece_head;
         while(p != NULL) {
 
@@ -539,7 +544,6 @@ int process_request_msg(Peer *peer, unsigned char *buff, int len) {
 
         //若请求加入到请求队列中
         request_piece = (Request_piece*)malloc(sizeof(Request_piece));
-
         if(request_piece == NULL) {
             printf("%s:%d error", __FILE__, __LINE__);
             return 0;
@@ -554,11 +558,10 @@ int process_request_msg(Peer *peer, unsigned char *buff, int len) {
             peer->Requested_piece_head = request_piece;
         } else {
             p = peer->Requested_piece_head;
-            while(p != NULL)
-                p = p->next;
+            while(p != NULL) p = p->next;
             p->next = request_piece;
         }
-
+        //打印提示信息
         printf("***add q request FROM IP:%s index:%-6d begin:%-6x***\n", peer->ip, index, begin);
 
     }
@@ -593,10 +596,7 @@ int process_piece_msg(Peer *peer, unsigned char *buff, int len) {
                 break;
             p = p->next;
         }
-        if(p == NULL) {
-            printf("did not found matched request\n");
-            return -1;
-        }
+        if(p == NULL) { printf("did not found matched request\n"); return -1; }
         //开始记时,并累计收到数据的字节数
         if(peer->last_down_timestamp == 0)
             peer->last_down_timestamp = time(NULL);
@@ -625,7 +625,7 @@ int parse_response(Peer *peer) {
     btkeyword[0] = 19;
     memcpy(&btkeyword[1], "BitTorrent Protocol",19);    //BitTorrent协议关键字
     //分别处理12种消息
-    for(index =0; index < len;) {
+    for(index = 0; index < len;) {
 
         if ( (len-index >= 68) && (memcpy(&buff[index], btkeyword, 20) == 0 ) ) {
             process_handshake_msg(peer, buff+index, 68);
@@ -660,7 +660,7 @@ int parse_response(Peer *peer) {
 
             c[0] = buff[index];   c[1] = buff[index+1];
             c[2] = buff[index+2]; c[3] = buff[index+3];
-            length = char_to_int[c] - 9;
+            length = char_to_int(c) - 9;
 
             process_piece_msg(peer, buff+index, length+13);
             index += length + 13;   //length+13为piece消息的长度
@@ -673,7 +673,7 @@ int parse_response(Peer *peer) {
             //如果是未知的消息类型,则跳过不予处理
             unsigned char c[4];
             int length;
-            if(index +4 < length) {
+            if(index + 4 < len) {
                 c[0] = buff[index];   c[1] = buff[index+1];
                 c[2] = buff[index+2]; c[3] = buff[index+3];
                 length = char_to_int(c);
@@ -697,9 +697,8 @@ int parse_response_uncomplete_msg(Peer *p, int ok_len) {
     int tmp_buff_len;
 
     //分配存储空间,并保存接收缓冲区中不完整的消息
-    tmp_len = p->buff_len - ok_len;
+    tmp_buff_len = p->buff_len - ok_len;
     if(tmp_buff_len <= 0) return -1;
-
     tmp_buff = (char*)malloc(tmp_buff_len);
     if(tmp_buff == NULL){
         printf("%s:%d error\n", __FILE__, __LINE__);
@@ -719,22 +718,23 @@ int parse_response_uncomplete_msg(Peer *p, int ok_len) {
 }
 
 int prepare_send_have_msg() {
+
     Peer *p = peer_head;
     //int i;
-    if(peer_head == NULL || hava_piece_index[0] == -1) return -1;
+    if(peer_head == NULL || have_piece_index[0] == -1) return -1;
     //if(hava_piece_index[0] == -1) return -1;
 
     while(p != NULL) {
         for(int i = 0; i < 64; i++) {
-            if(have_piece_index[i] != -1) create_have_msg(hava_piece_index[i], p);
+            if(have_piece_index[i] != -1) create_have_msg(have_piece_index[i], p);
             else break;
         }
         p =  p->next;
     }
 
     for(int i = 0; i < 64; i++) {
-        if(hava_piece_index[i] == -1) break;
-        else hava_piece_index[i] = -1;
+        if(have_piece_index[i] == -1) break;
+        else have_piece_index[i] = -1;
     }
 
     return 0;
@@ -743,7 +743,6 @@ int prepare_send_have_msg() {
 int create_response_message(Peer *peer) {
 
     if(peer == NULL) return -1;
-
     if(peer->state == INITIAL) { //处于initial状态时主动发握手消息
         create_handshake_msg(info_hash, peer_id, peer);
         peer->state = HALFSHAKED;
@@ -760,9 +759,8 @@ int create_response_message(Peer *peer) {
     if(peer->am_choking == 0 && peer->Requested_piece_head != NULL) {
         Request_piece *req_p = peer->Requested_piece_head;
         int ret = read_slice_for_send(req_p->index, req_p->begin, req_p->length, peer);
-        if(ret < 0) {
-            printf("read_slice_for_send ERROR\n");
-        } else {
+        if(ret < 0) { printf("read_slice_for_send ERROR\n");}
+        else {
             if(peer->last_up_timestamp == 0)
                 peer->last_up_timestamp = tiime(NULL);
             peer->up_count += req_p->length;

@@ -32,7 +32,7 @@ void do_clear_work() {
     //关闭文件描述符
     int i;
     for(i=0; i< fds_len; i++){
-        close(fds[i[);
+        close(fds[i]);
     }
     //释放动态分配的内存
     release_memory_in_parse_metafile();

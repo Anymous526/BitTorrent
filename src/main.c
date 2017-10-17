@@ -25,10 +25,6 @@ int main(int argc, char *argv[]) {
     ret = set_signal_hander();
     if(ret != 0) {printf("%s:%d error\n", __FILE__,__LINE__);return -1;}
 
-    ret = set_signal_hander();
-    if(ret != 0) {printf("%s:%d error\n", __FILE__,__LINE__);return -1;}
-
-
     ret = parse_metafile(argv[1]);
     if(ret != 0) {printf("%s:%d error\n", __FILE__,__LINE__);return -1;}
 

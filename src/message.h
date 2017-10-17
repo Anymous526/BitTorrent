@@ -25,6 +25,7 @@ int parse_response_uncomplete_msg(Peer *p, int ok_len);
 //根据当前的状态创建响应消息
 int create_response_message(Peer *peer);
 //为发送hava消息作准备,hava消息为较为特殊,它要发送所有peer
+int prepare_send_have_msg();
 //即将与peer断开, 丢弃套接字发送缓冲中的所有未发送的消息
 void discard_send_buffer(Peer *peer);
 

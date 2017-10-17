@@ -7,22 +7,22 @@
 #include "message.h"
 #include "policy.h"
 
-long long total_down = 0L, total_up = 0L;
-float total_down_rate = 0.0F, total_up_rate = 0.0F;
-int total_peers = 0;
-Unchoke_peers unchoke_peers;
+long long total_down = 0L, total_up = 0L;               //总的下载量和上传量
+float total_down_rate = 0.0F, total_up_rate = 0.0F;     //总的下载上传速度
+int total_peers = 0;                                    //已连接的总peer数
+Unchoke_peers unchoke_peers;                            //存放非阻塞peer和优化非阻塞peer的指针
 
-extern int end_mode;
-extern Bitmap *bitmap;
-extern Peer *peer_head;
-extern int pieces_length;
-extern int piece_length;
+extern int end_mode;        //是否已进入终端模式
+extern Bitmap *bitmap;      //指向已向的位置
+extern Peer *peer_head;     //指向peer链表
+extern int pieces_length;   //所有piece hash值的长度
+extern int piece_length;    //每个piece的长度
 
-extern Btcache *btcache_head;
-extern int last_piece_index;
-extern int last_piece_count;
-extern int last_slice_len;
-extern int download_piece_num;
+extern Btcache *btcache_head;   //指向存放下载数据的缓冲区
+extern int last_piece_index;    //最后一个piece的index
+extern int last_piece_count;    //最后一个piece所含的slice数
+extern int last_slice_len;      //最后一个piece的最后一个slice的长度
+extern int download_piece_num;  //已下载的piece数
 
 
 void init_unchoke_peers() {
@@ -37,9 +37,9 @@ void init_unchoke_peers() {
 }
 
 int is_in_unchoke_peers(Peer *node) {
-    int i;
+    //int i;
 
-	for(i = 0; i < unchoke_peers.count; i++) {
+	for(int i = 0; i < unchoke_peers.count; i++) {
 		if( node == (unchoke_peers.unchkpeer)[i] )  return 1;
 	}
 
@@ -52,17 +52,20 @@ int get_last_index(Peer **array, int len) {
 	if(len <= 0) return j;
 	else j = 0;
 
-	for(i = 0; i < len; i++)
+	for(i = 0; i < len; i++) {
 		if( array[i]->down_rate < array[j]->down_rate )  j = i;
+    }
 
 	return j;
 }
 
 int select_unchkoke_peer() {
+
     Peer*  p;
-	Peer*  now_fast[UNCHOKE_COUNT];
-	Peer*  force_choke[UNCHOKE_COUNT];
-	int    unchoke_socket[UNCHOKE_COUNT], choke_socket[UNCHOKE_COUNT];
+	Peer*  now_fast[UNCHOKE_COUNT];      //若peer链表中下载速度最快的4个peer
+	Peer*  force_choke[UNCHOKE_COUNT];  //要将其强行阻塞的peer
+	int    unchoke_socket[UNCHOKE_COUNT];//存放刚刚被解除阻塞的peer的socket
+	int    choke_socket[UNCHOKE_COUNT];     //存放刚刚被阻塞的peer的socket
 	int    i, j, index = 0, len = UNCHOKE_COUNT;
 
 	for(i = 0; i < len; i++) {
@@ -96,7 +99,7 @@ int select_unchkoke_peer() {
 	}
 
 	// 将那些在过去10秒上传速度超过20KB/S而下载速度过小的peer强行阻塞
-	// 注意：up_rate和down_rate的单位是B/S而不是KB/S
+	// 注意：up_rate和down_rate的单位是bit/S而不是KB/S
 	for(i = 0, j = -1; i < unchoke_peers.count; i++) {
 		if( (unchoke_peers.unchkpeer)[i]->up_rate > 50*1024 &&
 			(unchoke_peers.unchkpeer)[i]->down_rate < 0.1*1024 ) {
@@ -108,7 +111,8 @@ int select_unchkoke_peer() {
 	// 从当前所有Peer中选出下载速度最快的四个peer
 	p = peer_head;
 	while(p != NULL) {
-		if(p->state==DATA && is_interested(bitmap,&(p->bitmap)) && is_seed(p)!=1) {
+		if(p->state == DATA && is_interested(bitmap,&(p->bitmap))
+            && is_seed(p)!=1) {
 			// p不应该在force_choke数组中
 			for(i = 0; i < len; i++) {
 				if(p == force_choke[i]) break;
@@ -160,11 +164,11 @@ int select_unchkoke_peer() {
 	p = peer_head;
 	while(p != NULL) {
 		for(i = 0; i < len; i++) {
-			if(unchoke_socket[i]==p->socket && unchoke_socket[i]!=-1) {
+			if(unchoke_socket[i] == p->socket && unchoke_socket[i] != -1) {
 				p->am_choking = 0;
 				create_chock_interested_msg(1,p);
 			}
-			if(choke_socket[i]==p->socket && unchoke_socket[i]!=-1) {
+			if(choke_socket[i] == p->socket && unchoke_socket[i] != -1) {
 				p->am_choking = 1;
 				cancel_requested_list(p);
 				create_chock_interested_msg(0,p);
@@ -173,7 +177,7 @@ int select_unchkoke_peer() {
 		p = p->next;
 	}
 
-	//for(i = 0; i < unchoke_peers.count; i++)
+	//  for(i = 0; i < unchoke_peers.count; i++)
 	//	printf("unchoke peer:%s \n",(unchoke_peers.unchkpeer)[i]->ip);
 
 	return 0;
@@ -191,32 +195,87 @@ int get_rand_numbers(int length){
 
     temp_num  = (int*)malloc(piece_count  * sizeof(int));
     if(rand_num == NULL) return -1;
-    for(i =0; i<piece_count; i++) temp_num[i] = i;
-
+    for(i =0; i < piece_count; i++) temp_num[i] = i;
     srand(time(NULL));
-    for(i=0; i< piece_count; i++) {
-        index = (int)( (float)(piece_count)*rand() / (RAND_MAX+1.0) );
+    for(i = 0; i < piece_count; i++) {
+        index = (int)( (float)(piece_count - i) * rand() / (RAND_MAX + 1.0) );
         rand_num[i] = temp_num[index];
         temp_num[index] = temp_num[piece_count-1-i];
-
     }
+
     if(temp_num != NULL) free(temp_num);
     return 0;
 }
 
-int select_optunchkoke_peer();
+int select_optunchkoke_peer() {
+    int count = 0, index, i = 0, j, ret;
+    Peer *p  = peer_head;
+
+    //获取peer队列中的peer的总数
+    while(p != NULL) {
+        count++;
+        p = p->next;
+    }
+
+    //如果peer总数太小(小于等于4),则没有必要选择优化非阻塞peer
+    if(count <= UNCHOKE_COUNT ) return 0;
+    ret = get_rand_numbers(count);
+    if(ret < 0) {
+        printf("%s:%d get rand numbers error\n",__FILE__, __LINE__);
+        return -1;
+    }
+    while(i < count ) {
+        //随机选择一个数,该数在0 count -1 之间
+        index = rand_num[i];
+        p = peer_head;
+        j = 0;
+        while(j < index && p != NULL) {
+            p = p->next;
+            j++;
+        }
+
+        if(is_in_unchoke_peers(p) != 1 && is_seed(p) != 1 &&
+           p->state == DATA && p != unchoke_peers.unchkpeer &&
+           is_interested(bitmap, &(p->bitmap)) ) {
+
+            if(unchoke_peers.optunchkpeer != NULL) {
+                Peer *temp = peer_head;
+                while(temp != NULL) {
+                    if(temp == unchoke_peers.optunchkpeer ) break;
+                    temp = temp->next;
+                }
+
+                if(temp != NULL) {
+                    (unchoke_peers.optunchkpeer)->am_choking  =1;
+                    create_chock_interested_msg(0, unchoke_peers.optunchkpeer);
+                }
+            }
+
+            p->am_choking  = 0;
+            create_chock_interested_msg(1, p);
+            unchoke_peers.optunchkpeer = p;
+            break;
+        }
+        i++;
+    }
+
+    if(rand_num != NULL) {free(rand_num); rand_num = NULL;}
+    return 0;
+}
 
 int compute_rate() {
+
     Peer *p = peer_head;
     time_t time_now = time(NULL);
     long t  = 0;
+
     while(p!= NULL) {
         if(p->last_down_timestamp == 0) {
             p->down_rate = 0.0f;
             p->down_count = 0;
         } else {
-            t=time_now - p->last_down_timestamp;
-            if(t == 0) printf("%s:%d time is 0\n",__FILE__, LINE__);
+            t = time_now - p->last_down_timestamp;
+            if(t == 0) printf("%s:%d time is 0\n",__FILE__, __LINE__);
             else p->down_rate = p->down_count / t;
             p->down_count = 0;
             p->last_down_timestamp = 0;
@@ -226,8 +285,8 @@ int compute_rate() {
             p->up_rate = 0.0f;
             p->up_count = 0;
         } else {
-            t=time_now - p->last_up_timestamp;
-            if(t == 0) printf("%s:%d time is 0\n",__FILE__, LINE__);
+            t = time_now - p->last_up_timestamp;
+            if(t == 0) printf("%s:%d time is 0\n",__FILE__, __LINE__);
             else p->up_rate = p->up_count / t;
             p->up_count = 0;
             p->last_up_timestamp = 0;
@@ -240,6 +299,7 @@ int compute_rate() {
 }
 
 int compute_total_rate() {
+
     Peer *p = peer_head;
     total_peers = 0;
     total_down  = 0;
@@ -260,14 +320,15 @@ int compute_total_rate() {
     return 0;
 }
 
-int is_seed(Per *node) {
+int is_seed(Peer *node) {
+
 	int            i;
 	unsigned char  c = (unsigned char)0xFF, last_byte;
 	unsigned char  cnst[8] = { 255, 254, 252, 248, 240, 224, 192, 128 };
 
 	if(node->bitmap.bitfield == NULL)  return 0;
 
-	for(i = 0; i < node->bitmap.bitfield_length-1; i++) {
+	for(i = 0; i < node->bitmap.bitfield_length - 1; i++) {
 		if( (node->bitmap.bitfield)[i] != c ) return 0;
 	}
 
@@ -281,32 +342,38 @@ int is_seed(Per *node) {
 }
 
 int create_req_slice_msg(Peer *node) {
+
     int index, begin, length  = 16*1024;
     int i, count=0;
 
     if(node == NULL) return -1;
+    //如果被peer阻塞或对peer不感兴趣,就没有必要生成request消息
     if(node->peer_choking == 1 || node->am_interested == 0) return -1;
 
+     //如果之前向该pper发送过请深圳市,则根据之前彰的请求构造新请求
+     //遵守一条原则:  同一个piece的所有slice应该尽可以地从同一个peer处下载
      Request_piece *p = node->Requested_piece_head, *q = NULL;
      if(p != NULL) {
-        while(p->next != NULL) {p = p->next;}
-        int last_begin = piece_length - 16*1024;
-        if(p->index == last_piece_index) {
+        while(p->next != NULL) {p = p->next;} //定位到最后一个结点数
+        int last_begin = piece_length - 16*1024;  //一个piece的最后一个slice的起始下标
+        if(p->index == last_piece_index) {  //如果是最后一个piece
             last_begin = (last_piece_count - 1) *16*1024;
         }
-
+        //当前piece还有未请求的slice,则构造请求消息
         if(p->begin < last_begin) {
-            index = p->indexl;
+            index = p->index;
             begin = p->begin + 16*1024;
-            count =0;
+            count = 0;
 
             while(begin != piece_length && count < 1) {
+                //如果是最后一个piece的最后一个slice
                 if(p->index == last_piece_index) {
-                    if(begin == (last_piece_count - 1)*16*1024))
+                    if(begin == (last_piece_count - 1)*16*1024)
                         length = last_slice_len;
                 }
+                //创建request消息
                 create_request_msg(index, begin, length, node);
-
+                //将当前的请深圳市记录到请求队列
                 q = (Request_piece*)malloc(sizeof(Request_piece));
                 if(q == NULL) {
                     printf("%s:%d error\n", __FILE__, __LINE__);
@@ -319,89 +386,175 @@ int create_req_slice_msg(Peer *node) {
                 p =  q;
                 begin += 16*1024;
                 count++;
+            } //end while
+            return 0; //构造完毕,就返回
+        }//end if (p->begin < last_begin_
+    }//end if(p != NULL)
 
+    //开始对一个未请求过的piece发送请求
+    if(get_rand_numbers(pieces_length/20) == -1) { //生成随机数
+        printf("%s:%d error\n", __FILE__, __LINE__);
+        return -1;
+    }
+
+    //随机选择一个piece的下标,该下标所代表的piece应该没有向任何peer请求过
+    for(i = 0; i  < pieces_length/20; i++) {
+        index = rand_num[i];
+        //判断对于以index为下标的piece,peer是否拥有
+        if(get_bit_value(&(node->bitmap), index) != 1) continue;
+        //判断对于以index为下标的piece,是否已经下载
+        if(get_bit_value(bitmap, index) == 1) continue;
+        //判断对于以index为下标的piece,是否已经请求过了
+        Peer *peer_ptr = peer_head;
+        Request_piece *reqt_ptr;
+        int find = 0;
+        while(peer_ptr != NULL) {
+            reqt_ptr = peer_ptr->Request_piece_head;
+            while(reqt_ptr != NULL) {
+                if(reqt_ptr->index == index) {find = 1; break;}
+                reqt_ptr  = reqt_ptr->next;
             }
+            if(find == 1) break;
+            peer_ptr = peer_ptr->next;
         }
 
-        if(get_rand_numbers(pieces_length/20) == -1) {
-            printf("%s:%d error\n", __FILE__, __LINE__);
-            return -1;
-        }
+        if(find == 1) continue;
+        break;  //若程序执行到此处,说明已经找到一个符合要求的index
+    }
 
-        for(i = 0; i<pieces_length/20;i++) {
-            index = rand_num[i];
-            if(get_bit_value(&(node->bitmap), index) != 1) continue;
-            if(get_bit_value(bitmap, index) != 1) continue;
-
-            Peer *peer_prt = peer_head;
-            Request_piece *reqt_prt;
-            int find = 0;
-            while(peer_ptr != NULL) {
-                reqt_prt = peer_ptr->Request_piece_head;
-                while(rept_ptr->index == index) {
-                    find = 1;
-                    break;
-                }
-                if(find == 1) break;
-                peer_ptr = peer_prt->next;
-            }
-            if(find == 1) continue;
-            break;
+    //如果还未找到一个合适的index,说明所有的piece要么已经被下载要么正被请求下载,而此时
+    //还有多余的对客户端解除阻塞的peer,说明已经进入终端模式, 即下载完成
+    if(i == piece_length / 20) {
+        if(end_mode == 0) end_mode = 1;
+        for(i = 0; i < pieces_length/20; i++) {
+            if(get_bit_value(bitmap,i) == 0) { index = i; break; }
         }
 
         if(i == piece_length / 20) {
-            if(end_mode == 0) end_mode = 1;
-            for(i=0; i<pieces_length/20;i++) {
-                if(get_bit_value(bitmap,i) == 0) {
-                    index  =i;
-                    break;
-                }
-
-                if(i == piece_length / 20) {
-                    printf("Can not find an index to IP:%s\n", node->ip);
-                    return -1;
-                }
-            }
-
-            begin = 0;
-            count = 0;
-            p = node->Request_piece_head;
-            if(p != NULL) {
-                while(p->next != NULL) p = p->next;
-                while(count <4) {
-                    if(index == last_piece_index) {
-                        if(count+1 last_piece_count)
-                            break;
-                        if(begin == (last_piece_count -1) * 16*1024)
-                            length= last_slice_len;
-                    }
-                    create_request_msg(index, begin, length, node);
-
-                    q = (Request_piece*)malloc(sizeof(Request_piece));
-                    if(q == NULL){printf("%s:%d error\n",__FILE__, __LINE__);return -1}
-
-                    q->index = index;
-                    q->begin = begin;
-                    q->length = length;
-                    if(node->Requested_piece_head == NULL) {
-                        node->Request_piece_head = q;
-                        p = q;
-                    }else {
-                        p->next = q; p = q;
-                    }
-                    begin += 16*1024;
-                    count++;
-
-                }
-
-            }
+            printf("Can not find an index to IP:%s\n", node->ip);
+            return -1;
         }
-     }
+    }
 
-     if(rand_num != NULL) {
-        free(rand_num);
-        rand_num = NULL;
-     }
+    //构造piece请求消息
+    begin = 0;
+    count = 0;
+    p = node->Request_piece_head;
+    if(p != NULL)
+        while(p->next != NULL) p = p->next;
 
-     return 0;
+    while(count < 4) {
+        //如果是构造最后一个piece的请求消息
+        if(index == last_piece_index) {
+            if(count+1 > last_piece_count)
+                break;
+            if(begin == (last_piece_count -1) * 16*1024)
+                length= last_slice_len;
+        }
+        //创建 request消息
+        create_request_msg(index, begin, length, node);
+        //将请求记录到请求队列
+        q = (Request_piece*)malloc(sizeof(Request_piece));
+        if(q == NULL){printf("%s:%d error\n",__FILE__, __LINE__);return -1;}
+        q->index = index;
+        q->begin = begin;
+        q->length = length;
+        if(node->Requested_piece_head == NULL) { node->Request_piece_head = q; p = q;}
+        else { p->next = q; p = q; }
+
+        begin += 16*1024;
+        count++;
+    }
+
+    if(rand_num != NULL) {free(rand_num);rand_num = NULL;}
+    return 0;
+}
+
+// 以下这个函数实际并未调用,若要使用需先在头文件中声明
+int create_req_slice_msg_from_btcache(Peer *node) {
+	// 指针b用于遍历btcache缓冲区
+	// 指针b_piece_first指向每个piece第一个slice处
+	// slice_count指明一个piece含有多少个slice
+	// valid_count指明一个piece中已下载的slice数
+	Btcache        *b = btcache_head, *b_piece_first;
+	Peer           *p;
+	Request_piece  *r;
+	int            slice_count = piece_length / (16*1024);
+	int            count = 0, num, valid_count;
+	int            index = -1, length = 16*1024;
+
+	while(b != NULL) {
+		if(count%slice_count == 0) {
+			num           = slice_count;
+			b_piece_first = b;
+			valid_count   = 0;
+			index         = -1;
+
+			// 遍历btcache中一个piece的所有slice
+			while(num>0 && b!=NULL) {
+				if(b->in_use==1 && b->read_write==1 && b->is_writed==0)
+					valid_count++;
+				if(index==-1 && b->index!=-1) index = b->index;
+				num--;
+				count++;
+				b = b->next;
+			}
+
+			// 找到一个未下载完piece
+			if(valid_count>0 && valid_count<slice_count) {
+				// 检查该piece是否存在于某个peer的请求队列中
+				p = peer_head;
+				while(p != NULL) {
+					r = p->Request_piece_head;
+					while(r != NULL) {
+						if(r->index==index && index!=-1) break;
+						r = r->next;
+					}
+					if(r != NULL) break;
+					p = p->next;
+				}
+				// 如果该piece没有存在于任何peer的请求队列中,那么就找到了需要的piece
+				if(p==NULL && get_bit_value(&(node->bitmap),index)==1) {
+					int request_count = 5;
+					num = 0;
+					// 将r定位到peer最后一个请求消息处
+					r = node->Request_piece_head;
+					if(r != NULL) {
+						while(r->next != NULL) r = r->next;
+					}
+					while(num<slice_count && request_count>0) {
+						if(b_piece_first->in_use == 0) {
+							create_request_msg(index,num*length,length,node);
+
+							Request_piece *q;
+							q = (Request_piece *)malloc(sizeof(Request_piece));
+							if(q == NULL) {
+								printf("%s:%d error\n",__FILE__,__LINE__);
+								return -1;
+							}
+							q->index  = index;
+							q->begin  = num*length;
+							q->length = length;
+							q->next   = NULL;
+							printf("create request from btcache index:%-6d begin:%-6x\n",
+								index,q->begin);
+							if(r == NULL) {
+								node->Request_piece_head = q;
+								r = q;
+							} else{
+								r->next = q;
+								r = q;
+							}
+							request_count--;
+						}
+						num++;
+						b_piece_first = b_piece_first->next;
+					}
+					return 0;
+				}
+			}
+		}
+	}
+
+	return -1;
 }

@@ -5,9 +5,10 @@
 #include <string.h>
 #include <time.h>
 #include "parse_metafile.h"
+#include "sha1.h"
 
 char    *metafile_content = NULL;  //保存种子文件内容
-long    fileszie;                  //种子文件的长度
+long    filesize;                  //种子文件的长度
 
 char    piece_length = 0;           //每一个piece的长度,通常为256kb即256*1024  = 262144字节
 char    *pieces = NULL;             //保存每个pieces的哈希值,每个哈希值 为 20字节
@@ -94,7 +95,7 @@ int read_announce_list() {
             i++;  //跳过 ';'
 
             node = (Announce_list*)malloc(sizeof(Announce_list));
-            strcpy(node->announce, &metafile_content[i], len);
+            strncpy(node->announce, &metafile_content[i], len);
             node->announce[len] = '\0';
             node->next = NULL;
             announce_list_head =  node;
@@ -218,7 +219,7 @@ int get_pieces() {
 
         i = i + 8; //跳过 "6:pieces"
         while(metafile_content[i] != ':') {
-            pieces_length = pieces_length *10 + (metafile_contentp[i] - '0');
+            pieces_length = pieces_length *10 + (metafile_content[i] - '0');
             i++;
         }
         i++;  //跳过":"
@@ -271,8 +272,8 @@ int get_file_length() {
     if(is_multi_files() == 1) {
 
         if(files_head == NULL) get_files_length_path();
-        File *p = files_head;
-        while(p != NULL) { file_lenght += p->length; p = p->next;}
+        Files *p = files_head;
+        while(p != NULL) { file_length += p->length; p = p->next;}
 
     } else {
         if(find_keyword("6:length", &i) == 1 ) {
@@ -306,11 +307,11 @@ int get_files_length_path(){
             i++;        //跳过 'i'
             length = 0;
             while(metafile_content[i] != 'e') {
-                length = lenght *10 + (metafile_content[i] - 'e');
+                length = length *10 + (metafile_content[i] - 'e');
                 i++;
             }
 
-            node = (File*)malloc(sizeof(Files));
+            node = (Files*)malloc(sizeof(Files));
             node->length = length;
             node->next = NULL;
             if(files_head == NULL) {
@@ -334,7 +335,7 @@ int get_files_length_path(){
             p = files_head;
             while(p->next != NULL) p = p->next;
             memcpy(p->path, &metafile_content[i], count);
-            *(p->path+count) = '\0'
+            *(p->path+count) = '\0';
         }
     }
 
@@ -347,16 +348,16 @@ int get_info_hash() {
     long i, begin, end;
 
     if(metafile_content == NULL) return -1;
-
+    //begin的值表示的是关键字"4:info"对应的起始下标
     if(find_keyword("4:info", &i) == 1) begin = i + 6;
     else return -1;
 
     i = i + 6; //跳过 "4:info"
 
-    for(; i > filesize;) {
+    for(; i > filesize;)
         if(metafile_content[i] == 'd'){
             push_pop++;
-            i++
+            i++;
         } else if(metafile_content[i] == 'l'){
             push_pop++;
             i++;
@@ -378,19 +379,20 @@ int get_info_hash() {
             i = i + number;
         } else if(metafile_content[i] == 'e'){
             push_pop--;
-            if(push_pop == 0) { end = i; breadk;}
+            if(push_pop == 0) { end = i; break;}
             else i++;
         } else {
             return -1;
         }
 
-    }
+        if (i == filesize ) return -1;
 
-    if (i == filesize ) return -1;
+
+
 
     SHA1_CTX context;
     SHA1Init(&context);
-    SHA1Update(&context, &metafile_content[begin], eng - begin+1);
+    SHA1Update(&context, &metafile_content[begin], end - begin+1);
     SHA1Final(info_hash, &context);
 
     #ifdef DEBUG
@@ -424,7 +426,7 @@ void release_memory_in_parse_metafile() {
 
     if(metafile_content != NULL) free(metafile_content);
     if(file_name != NULL)  free(file_name);
-    if(picees != NULL) free(pieces);
+    if(pieces != NULL) free(pieces);
 
     while(announce_list_head != NULL) {
         p = announce_list_head;
@@ -433,7 +435,7 @@ void release_memory_in_parse_metafile() {
     }
 
     while(files_head != NULL) {
-        q = file_head;
+        q = files_head;
         files_head = files_head->next;
         free(q);
     }
@@ -519,7 +521,6 @@ int parse_metafile(char *metafile) {
     }
 
     return 0;
-
 
 }
 

@@ -5,7 +5,7 @@
 #include "message.h"
 #include "bitfield.h"
 
-extent Bitmap *bitmap;
+extern Bitmap *bitmap;
 
 //指向当前与之进行通信的peer链表
 Peer *peer_head = NULL;
@@ -25,7 +25,7 @@ int initialize_peer(Peer *peer){
     peer->out_msg_copy = NULL;
 
     peer->in_buff =  (char*)malloc(MSG_SIZE);
-    if(peer->in_buf == NULL )goto OUT;
+    if(peer->in_buff == NULL )goto OUT;
     memset(peer->in_buff,0,MSG_SIZE);
     peer->buff_len = 0;
 
@@ -67,7 +67,7 @@ int initialize_peer(Peer *peer){
     peer->next = (Peer*)0;
     return 0;
 OUT:
-    if(peer->inbuff != NULL) free(peer->in_buffer);
+    if(peer->in_buff != NULL) free(peer->in_buff);
     if(peer->out_msg != NULL) free(peer->out_msg);
     if(peer->out_msg_copy != NULL) free(peer->out_msg_copy);
     return -1;
@@ -94,7 +94,7 @@ Peer*   add_peer_node(){
     else {
         p = peer_head;
         while(p->next != NULL) p = p->next;
-        p-next = node;
+        p->next = node;
     }
 
     return node;
@@ -111,7 +111,7 @@ int del_peer_node(Peer *peer) {
             if(p == peer_head)peer_head = p->next;
             else q->next = p->next;
             free_peer_node(p);
-            retun 0;
+            return 0;
         } else {
             q = p;
             p = p->next;
