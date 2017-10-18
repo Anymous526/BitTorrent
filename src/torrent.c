@@ -1,4 +1,4 @@
-#incldue <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,8 +21,8 @@
 #include "bitfield.h"
 #include "parse_metafile.h"
 
-//½ÓÊÕ»º³åÇøµÄÊı¾İ´ó¼Òµ½thresholdÊ±,ĞèÒªÁ¢¼´½øĞĞ´¦Àí,·ñÔò»º³åÇø¿ÉÄÜÒç³ö
-//18*1204bitÈ¡18kbÊÇ½ÓÊÕ»º³åÇøµÄ´óĞ¡, 1500btyeÊÇÒÔÌ«ÍøµÈ¾ÖÓòÍøÒ»¸öÊı¾İ°üµÄ×î´ó³¤¶È
+//æ¥æ”¶ç¼“å†²åŒºçš„æ•°æ®å¤§å®¶åˆ°thresholdæ—¶,éœ€è¦ç«‹å³è¿›è¡Œå¤„ç†,å¦åˆ™ç¼“å†²åŒºå¯èƒ½æº¢å‡º
+//18*1204bitå–18kbæ˜¯æ¥æ”¶ç¼“å†²åŒºçš„å¤§å°, 1500btyeæ˜¯ä»¥å¤ªç½‘ç­‰å±€åŸŸç½‘ä¸€ä¸ªæ•°æ®åŒ…çš„æœ€å¤§é•¿åº¦
 #define threshold (18*1024 - 1500)
 
 extern Announce_list *announce_list_head;
@@ -36,82 +36,82 @@ extern Peer *peer_head;
 extern long long total_down, total_up;
 extern float total_down_rate, total_up_rate;
 extern int total_peers;
-extern int download_pices_num;
+extern int download_piece_num;
 extern Peer_addr *peer_addr_head;
 
-int *sock = NULL;           //Á¬½ÓtrackerµÄÌ×½Ó×Ö
-struct sosckaddr_in *tracker= NULL; //Á¬½ÓtrackerÊ±Ê¹ÓÃ
-int *valid = NULL;              //Ö¸Ê¾Á¬½ÓtrackerµÄ×´Ì¬
-int tracker_count = 0;          //Îªtrackerer·şÎñÆ÷µÄ¸öÊı
+int *sock = NULL;           //è¿æ¥trackerçš„å¥—æ¥å­—
+struct sosckaddr_in *tracker= NULL; //è¿æ¥trackeræ—¶ä½¿ç”¨
+int *valid = NULL;              //æŒ‡ç¤ºè¿æ¥trackerçš„çŠ¶æ€
+int tracker_count = 0;          //ä¸ºtrackereræœåŠ¡å™¨çš„ä¸ªæ•°
 
-int *peer_sock = NULL;             //Á¬½ÓpeerµÄÌ×½Ó×Ö
-struct sockaddr_in *peer_addr = NULL;   //Á¬½ÓpeerÊ±Ê¹ÓÃ
-int *peer_valid = NULL; //Ö¸Ê¾Á¬½ÓpeerÔÚ×´Ì¬
-int peer_count = 0; //³¢ÊÔÓë¶àÉÙ¸öpeer½¨Á¢ Á¬½Ó
+int *peer_sock = NULL;             //è¿æ¥peerçš„å¥—æ¥å­—
+struct sockaddr_in *peer_addr = NULL;   //è¿æ¥peeræ—¶ä½¿ç”¨
+int *peer_valid = NULL; //æŒ‡ç¤ºè¿æ¥peeråœ¨çŠ¶æ€
+int peer_count = 0; //å°è¯•ä¸å¤šå°‘ä¸ªpeerå»ºç«‹ è¿æ¥
 
-int response_len = 0;   //´æ·Åtracker»ØÓ¦µÄ×Ü³¤¶È
-int response_index = 0; //´æ·Åtracker»ØÓ¦µ±Ç°³¤¶È
-char *tracker_response = NULL;   //´æ·Åtracker»ØÓ¦
+int response_len = 0;   //å­˜æ”¾trackerå›åº”çš„æ€»é•¿åº¦
+int response_index = 0; //å­˜æ”¾trackerå›åº”å½“å‰é•¿åº¦
+char *tracker_response = NULL;   //å­˜æ”¾trackerå›åº”
 
 int download_upload_with_peers() {
     Peer *p;
-    int ret, max_sockefd, i;
+    int ret, max_sockfd, i;
 
     int connect_tracker, connecting_tracker;
     int connect_peer, connecting_peer;
     time_t last_time[3],now_time;
 
-    time_t start_connect_tracker;   //¿ªÊ¼Á¬½ÓtrackerµÄÊ±¼ä
-    time_t start_connect_peer;      //¿ªÊ¼Á¬½ÓpeerµÄÊ±¼ä
-    fd_set rset, wset;              //selectÒª¼àÊÓµÄÃèÊö·û¼¯ºÏ
-    struct timeval tmval;           //selectº¯ÊıµÄ³¬Ê±Ê±¼ä
+    time_t start_connect_tracker;   //å¼€å§‹è¿æ¥trackerçš„æ—¶é—´
+    time_t start_connect_peer;      //å¼€å§‹è¿æ¥peerçš„æ—¶é—´
+    fd_set rset, wset;              //selectè¦ç›‘è§†çš„æè¿°ç¬¦é›†åˆ
+    struct timeval tmval;           //selectå‡½æ•°çš„è¶…æ—¶æ—¶é—´
 
     now_time = time(NULL);
-    last_time[0] = now_time;        //ÉÏÒ»´ÎÑ¡Ôñ·Ç×èÈûµÄpeerµÄÊ±¼ä
-    last_time[1] = now_time;        //ÉÏÒ»´ÎÑ¡ÔñÓÅ»¯·Ç×èÈûµÄÊ±¼ä
-    last_time[2] = now_time;        //ÉÏÒ»´ÎÁ¬½ÓTracker·şÎñÆ÷µÄÊ±¼ä
-    connect_tracker = 1;            //ÊÇ·ñĞèÒªÁ¬½Ótracker
-    connecting_tracker = 0;         //ÊÇ·ñÕıÔÚÁ¬½Ópeer
-    connect_peer = 0;               //ÊÇ·ñĞèÒªÁ¬½Ópeer
-    connecting_peer  = 0;           //ÊÇ·ñÕıÔÚÁ¬½Ópeer
+    last_time[0] = now_time;        //ä¸Šä¸€æ¬¡é€‰æ‹©éé˜»å¡çš„peerçš„æ—¶é—´
+    last_time[1] = now_time;        //ä¸Šä¸€æ¬¡é€‰æ‹©ä¼˜åŒ–éé˜»å¡çš„æ—¶é—´
+    last_time[2] = now_time;        //ä¸Šä¸€æ¬¡è¿æ¥TrackeræœåŠ¡å™¨çš„æ—¶é—´
+    connect_tracker = 1;            //æ˜¯å¦éœ€è¦è¿æ¥tracker
+    connecting_tracker = 0;         //æ˜¯å¦æ­£åœ¨è¿æ¥peer
+    connect_peer = 0;               //æ˜¯å¦éœ€è¦è¿æ¥peer
+    connecting_peer  = 0;           //æ˜¯å¦æ­£åœ¨è¿æ¥peer
 
     for(;;) {
-        max_sockefd = 0;
+        max_sockfd = 0;
         now_time = time(NULL);
 
-        //Ã¿¸ô10ÃëÖØĞÂÑ¡Ôñ·Ç×èÈûµÄpeer
+        //æ¯éš”10ç§’é‡æ–°é€‰æ‹©éé˜»å¡çš„peer
         if(now_time - last_time[0] >= 10) {
-            if(download_pices_num > 0 && peer_head != NULL) {
+            if(download_piece_num > 0 && peer_head != NULL) {
                 compute_rate();
                 select_unchkoke_peer();
                 last_time[0] = now_time;
             }
         }
 
-        //Ã¿¸ô30ÃëÖØĞÂÑ¡ÔñÓÅ»¯·Ç×èÈûpeer
+        //æ¯éš”30ç§’é‡æ–°é€‰æ‹©ä¼˜åŒ–éé˜»å¡peer
         if(now_time-last_time[i] >= 30) {
-            if(download_pices_num > 0 && peer_head != NULL) {
+            if(download_piece_num > 0 && peer_head != NULL) {
                 select_optunchkoke_peer();
                 last_time[1] = now_time;
             }
         }
 
-        //Ã¿¸ô5·ÖÖÓÁ¬½ÓÒ»´ÎTracker,Èç¹ûµ±Ç°peerÊıÎª0Ò²Á¬½ÓTracker
+        //æ¯éš”5åˆ†é’Ÿè¿æ¥ä¸€æ¬¡Tracker,å¦‚æœå½“å‰peeræ•°ä¸º0ä¹Ÿè¿æ¥Tracker
         if( (now_time - last_time[2] >= 300 || connect_tracker == 1)&&
            connecting_tracker != 1 && connect_peer != 1 && connecting_peer != 1) {
 
-            //ÓÉTrackerµÄURL»ñÈ¡TrackerµÄIPµØÖ·ºÍ¶Ë¿Ú
-            ret = prepare_connect_peer(&max_sockefd);
+            //ç”±Trackerçš„URLè·å–Trackerçš„IPåœ°å€å’Œç«¯å£
+            ret = prepare_connect_peer(&max_sockfd);
             if(ret < 0) {printf("prepare_connect_tracker\n");return -1;}
             connect_tracker = 0;
             connecting_tracker = 1;
             start_connect_tracker = now_time;
         }
 
-        //Èç¹ûÒªÁ¬½ÓĞÂµÄpeer,×ö×¼±¸¹¤×÷
+        //å¦‚æœè¦è¿æ¥æ–°çš„peer,åšå‡†å¤‡å·¥ä½œ
         if(connect_peer == 1) {
-            //´´½¨Ì×½Ó×Ö,Ïòpeer·¢³öÁ¬½ÓÇëÇó
-            ret = prepare_connect_peer(&max_sockefd);
+            //åˆ›å»ºå¥—æ¥å­—,å‘peerå‘å‡ºè¿æ¥è¯·æ±‚
+            ret = prepare_connect_peer(&max_sockfd);
             if(ret < 0) {printf("prepare_connect_tracker\n");return -1;}
 
             connect_peer = 0;
@@ -122,17 +122,17 @@ int download_upload_with_peers() {
         FD_ZERO(&rset);
         FD_ZERO(&wset);
 
-        //½«Á¬½ÓtrackerµÄsocket¼ÓÈëµ½´ı¼à¿ØµÄ¼¯ºÏÖĞ
+        //å°†è¿æ¥trackerçš„socketåŠ å…¥åˆ°å¾…ç›‘æ§çš„é›†åˆä¸­
         if(connecting_tracker == 1) {
             int flag = 1;
-            //Èç¹ûÁ¬½Ótracker³¬¹ı10Ãë,ÔòÖÕÖ¹Á¬½ÓTracker
+            //å¦‚æœè¿æ¥trackerè¶…è¿‡10ç§’,åˆ™ç»ˆæ­¢è¿æ¥Tracker
             if(now_time - start_connect_tracker > 10) {
                 for(i = 0;i < tracker_count; i++)
-                    if(valid[i] != 0) close(sock[i]); //valid[i]µÄÖµÎª -1, 1 ,2 Ê±Òª¼àÊÓ
+                    if(valid[i] != 0) close(sock[i]); //valid[i]çš„å€¼ä¸º -1, 1 ,2 æ—¶è¦ç›‘è§†
             } else {
               for(i=0;i<tracker_count;i++) {
-                if(valid[i] != 0 && sock[i] > max_sockefd)
-                    max_sockefd = sock[i];
+                if(valid[i] != 0 && sock[i] > max_sockfd)
+                    max_sockfd = sock[i];
                 if(valid[i] == -1) {
                     FD_SET(sock[i],&rset);
                     FD_SET(sock[i],&wset);
@@ -146,7 +146,7 @@ int download_upload_with_peers() {
                 }
               }
             }
-        //ËµÃ÷Á¬½ÓTracker½áÊø , ¿ªÊ¼Ò²peer½¨Á¢Á¬½Ó
+        //è¯´æ˜è¿æ¥Trackerç»“æŸ , å¼€å§‹ä¹Ÿpeerå»ºç«‹è¿æ¥
         if(flag == 1) {
             connecting_tracker = 0;
             last_time[2]= now_time;
@@ -161,10 +161,10 @@ int download_upload_with_peers() {
             continue;
         }
         }
-        //½«ÕıÔÚÁ¬½ÓµÄpeerµÄsocket¼ÓÈëµ½´ı¼àÊÓµÄ¼¯ºÏÖĞ
+        //å°†æ­£åœ¨è¿æ¥çš„peerçš„socketåŠ å…¥åˆ°å¾…ç›‘è§†çš„é›†åˆä¸­
         if(connecting_peer == 1) {
             int flag = 1;
-            //Èç¹ûÁ¬½Ópeer³¬¹ı10Ãë,ÔòÖÕÖ¹Á¬½Ópeer
+            //å¦‚æœè¿æ¥peerè¶…è¿‡10ç§’,åˆ™ç»ˆæ­¢è¿æ¥peer
             if(now_time - start_connect_peer > 10) {
                 for(i=0;i<peer_count; i++) {
                     if(peer_valid[i] != 1) close(peer_sock[i]);
@@ -172,8 +172,8 @@ int download_upload_with_peers() {
             }else {
                 for(i = 0; i< peer_count; i++) {
                     if(peer_valid[i] == -1) {
-                        if(peer_sock[i] > max_sockefd)
-                            max_sockefd = peer_sock[i];
+                        if(peer_sock[i] > max_sockfd)
+                            max_sockfd = peer_sock[i];
                         FD_SET(peer_sock[i], &rset);
                         FD_SET(peer_sock[i], &wset);
                         if(flag == 1) flag = 0;
@@ -188,14 +188,14 @@ int download_upload_with_peers() {
                 continue;
             }
         }
-        //½«peerµÄsocket³ÉÔ±¼ÓÈëµ½´ı¼àÊÓµÄ¼¯ºÏÖĞ
+        //å°†peerçš„socketæˆå‘˜åŠ å…¥åˆ°å¾…ç›‘è§†çš„é›†åˆä¸­
         connect_tracker = 1;
         p = peer_head;
         while(p!= NULL) {
             if(p->state != CLOSING &&p->socket > 0) {
                 FD_SET(p->socket, &rset);
                 FD_SET(p->socket, &wset);
-                if(p->socket > max_sockfd) max_sockefd = p->socket;
+                if(p->socket > max_sockfd) max_sockfd = p->socket;
                 connect_tracker = 0;
             }
             p = p->next;
@@ -207,30 +207,30 @@ int download_upload_with_peers() {
 
         tmval.tv_sec = 2;
         tmval.tv_usec = 0;
-        ret = select(max_sockefd+1, &rset, &wset, NULL, &tmval);
-        if(ret < 0) { //select³ö´í
+        ret = select(max_sockfd + 1, &rset, &wset, NULL, &tmval);
+        if(ret < 0) { //selectå‡ºé”™
             printf("%s:%d error\n", __FILE__, __LINE__);
             perror("select error");
             break;
         }
         if(ret == 0) continue;
 
-        //Ìí¼ÓhavaÏûÏ¢,havaÏûÏ¢Òª·¢ËÍ¸øÃ¿Ò»¸öpeer,·ÅÔÚ´Ë´¦ÊÇÎªÁË·½±ã´¦Àí
+        //æ·»åŠ havaæ¶ˆæ¯,havaæ¶ˆæ¯è¦å‘é€ç»™æ¯ä¸€ä¸ªpeer,æ”¾åœ¨æ­¤å¤„æ˜¯ä¸ºäº†æ–¹ä¾¿å¤„ç†
         prepare_send_have_msg();
         p = peer_head;
         while(p != NULL) {
             if(p->state != CLOSING && FD_ISSET(p->socket, &rset)) {
                 ret = recv(p->socket, p->in_buff+p->buff_len, MSG_SIZE-p->buff_len,0);
-                if(ret <=0) { //recv·µ»Ø0ËµÃ÷¶Ô·½¹Ø±ÕÁ¬½Ó,·µ»Ø¸ºÊıËµÃ÷³ö´í
+                if(ret <=0) { //recvè¿”å›0è¯´æ˜å¯¹æ–¹å…³é—­è¿æ¥,è¿”å›è´Ÿæ•°è¯´æ˜å‡ºé”™
                     p->state = CLOSING;
-                    //Í¨¹ıÉèÖÃÌ×½Ó×ÖÑ¡ÏîÀ´¶ªÆú·¢ËÍ»º³åÇøÖĞµÄÊı¾İ
+                    //é€šè¿‡è®¾ç½®å¥—æ¥å­—é€‰é¡¹æ¥ä¸¢å¼ƒå‘é€ç¼“å†²åŒºä¸­çš„æ•°æ®
                     discard_send_buffer(p);
                     clear_btcache_before_peer_close(p);
                     close(p->socket);
                 } else {
                     int completed, ok_len;
-                    p->buff_len += len;
-                    complete = is_complete_messgae(p->in_buff, p->buff_len, &ok_len);
+                    p->buff_len += ret;
+                    completed = is_complete_messgae(p->in_buff, p->buff_len, &ok_len);
                     if(completed == 1) parse_response(p);
                     else if(p->buff_len >= threshold)
                         parse_response_uncomplete_msg(p, ok_len);
@@ -241,12 +241,12 @@ int download_upload_with_peers() {
 
             if(p->state != CLOSING &&FD_ISSET(p->socket, &wset)) {
                 if(p->msg_copy_len == 0) {
-                    //´´½¨´ı·¢ËÍµÄÏûÏ¢,²¢°ÑÉú³ÉµÄÏûÏ¢¿½±´µ½·¢ËÍ»º³åÇø²¢·¢ËÍ
+                    //åˆ›å»ºå¾…å‘é€çš„æ¶ˆæ¯,å¹¶æŠŠç”Ÿæˆçš„æ¶ˆæ¯æ‹·è´åˆ°å‘é€ç¼“å†²åŒºå¹¶å‘é€
                     create_response_message(p);
                     if(p->msg_len > 0) {
                         memcpy(p->out_msg_copy, p->out_msg, p->msg_len);
                         p->msg_copy_len = p->msg_len;
-                        p->msg_len = 0; //Çå¿Õp->out_msgËù´æµÄÏûÏ¢
+                        p->msg_len = 0; //æ¸…ç©ºp->out_msgæ‰€å­˜çš„æ¶ˆæ¯
                     }
                 }
 
@@ -269,8 +269,8 @@ int download_upload_with_peers() {
         if(connecting_tracker == 1) {
             for(i = 0; i < tracker_count; i++) {
                 if(valid[i] == -1){
-                    //Èç¹ûÌ×½Ó×Ö¿ÉĞ´ÇÒÎ´·¢Éú´íÎó,ËµÃ÷Á¬½Ó½¨Á¢³É¹¦
-                    if(FD_ISSET(sock[i], &wet)) {
+                    //å¦‚æœå¥—æ¥å­—å¯å†™ä¸”æœªå‘ç”Ÿé”™è¯¯,è¯´æ˜è¿æ¥å»ºç«‹æˆåŠŸ
+                    if(FD_ISSET(sock[i], &wset)) {
                         int error, len;
                         error = 0;
                         len = sizeof(error);
@@ -283,13 +283,13 @@ int download_upload_with_peers() {
                         else {valid[i] = 1;}
                     }
                 }
-                if(valid[i0] == 1 && FD_ISSET(sock[i], &wet) ) {
+                if(valid[i] == 1 && FD_ISSET(sock[i], &wset) ) {
                     char request[1024];
-                    unsigned short listen_port = 33550; //±¾³ÌĞò²¢Î´ÊµÀıÍ¬¼àÌıÄ³¶Ë¿Ú
+                    unsigned short listen_port = 33550; //æœ¬ç¨‹åºå¹¶æœªå®ä¾‹åŒç›‘å¬æŸç«¯å£
                     unsigned long down = total_down;
                     unsigned long up = total_up;
                     unsigned long left;
-                    left = (pieces_length/20-download_pices_num)*piece_length;
+                    left = (pieces_length/20 - download_piece_num)*piece_length;
 
                     int num = i;
                     Announce_list *anouce = announce_list_head;
@@ -311,13 +311,13 @@ int download_upload_with_peers() {
                             memccpy(tracker_response+response_index, buffer, ret);
                             response_index += ret;
                             if(response_index == response_len) {
-                                parse_tracker_response2(track_response, response_len);
-                                clear_track_response();
+                                parse_tracker_response2(tracker_response, response_len);
+                                clear_tracker_response();
                                 valid[i] = 0;
                                 close(sock[i]);
                                 last_time[2] = time(NULL);
                             }
-                        } else if(get_response_type(buff, ret, &response_len) == 1) {
+                        } else if(get_response_type(buffer, ret, &response_len) == 1) {
                             tracker_response = (char*)malloc(response_len);
                             if(tracker_response == NULL) printf("malloc error\n");
                             memcpy(tracker_response, buffer, ret);
@@ -348,12 +348,12 @@ int download_upload_with_peers() {
                         peer_valid[i] =1;
                         add_peer_node_to_peerlist(&peer_sock[i], peer_addr[i]);
                     }
-                }//if ½áÊø±äËÙÆ÷
-            } //for½áÊø
-        }//if½áÊø
+                }//if ç»“æŸå˜é€Ÿå™¨
+            } //forç»“æŸ
+        }//ifç»“æŸ
 
-        //¶Ô´¦ÓÚcCLOSING×´Ì¬µÄpeer,½«Æä´Ópeer¶ÓÁĞÖĞÉ¾³ı
-        //´Ë´¦Ó¦¸Ãµ±·Ç³£Ğ¡ĞÄ,´¦Àí²»µ±ÈİÒ×Ê¹ÓÃ³ÌĞò±ÀÀ£
+        //å¯¹å¤„äºcCLOSINGçŠ¶æ€çš„peer,å°†å…¶ä»peeré˜Ÿåˆ—ä¸­åˆ é™¤
+        //æ­¤å¤„åº”è¯¥å½“éå¸¸å°å¿ƒ,å¤„ç†ä¸å½“å®¹æ˜“ä½¿ç”¨ç¨‹åºå´©æºƒ
         p = peer_head;
         while(p != NULL) {
             if(p->state == CLOSING) {
@@ -363,8 +363,8 @@ int download_upload_with_peers() {
                 p=p->next;
             }
         }
-        //ÅĞ¶ÏÊÇ·ñÒÑ¾­ÏÂÔØÍê±Ï
-        if(download_pices_num == pieces_length / 20) {
+        //åˆ¤æ–­æ˜¯å¦å·²ç»ä¸‹è½½å®Œæ¯•
+        if(download_piece_num == pieces_length / 20) {
             printf("+++++ All Files Downloaded Sucessfully +++++\n");
             break;
         }
@@ -427,7 +427,7 @@ void release_memory_in_torrent() {
 void clear_connect_tracker() {
     if(sock != NULL) {free(sock); sock = NULL;}
     if(tracker != NULL) {free(tracker); tracker = NULL;}
-    if(valid != NULL) {free(valid)l; valid = NULL};
+    if(valid != NULL) {free(valid);valid = NULL;}
     tracker_count = 0;
 }
 

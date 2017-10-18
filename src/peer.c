@@ -15,7 +15,7 @@ int initialize_peer(Peer *peer){
 
     if(peer == NULL) return -1;
     peer->socket = -1;
-    metset(peer->ip,0,16);
+    memset(peer->ip,0,16);
     peer->port  = 0;
     memset(peer->id, 0, 21);
     peer->state = INITIAL;

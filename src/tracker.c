@@ -1,22 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
-#incldue <errno.h>
-#incldue <ctype.h>
-#include <functl.h>
+#include <errno.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
-
-#ifdef MINGW32
-#include <winsock2.h>
-#else
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#endif
-
 #include <netdb.h>
 #include "parse_metafile.h"
 #include "peer.h"
@@ -35,7 +30,7 @@ extern int *peer_sock;              //连接peer的套接字
 extern struct sockaddr_in *peer_addr; //指示连接peer时敷衍
 extern int *peer_valid;             //指示连接peer的状态
 extern int peer_count;              //尝试与多少个peer建立连接
-Peer addr *peer_addr_head = NULL;
+Peer_addr *peer_addr_head = NULL;
 
 int http_encode(unsigned char *in, int len1, char *out, int len2) {
     int  i, j;
@@ -133,9 +128,9 @@ int create_request(char *request, int len, Announce_list *node,
             "&uploaded=%11d&downloaded=%11d,left=%11d"
             "&event=started&key=$d&compact=1&numwant=%d HTTP/1.0\r\n"
             "Host: %s\r\nUser-Anent: Bittorrent\r\nAccept: */*\r\n",
-            "Accept-Encoding: gzip\r\nConnection: closed\r\n\r\n"
+            "Accept-Encoding: gzip\r\nConnection: closed\r\n\r\n",
             encoded_info_hash,encoded_peer_id, port, up, down, left,
-            key, numwant, tracker_name);
+            key, numwant, tracker_name );
 
     #ifdef DEBUG
     printf("request:%s\n",request);
@@ -186,7 +181,7 @@ int prepare_connect_tracker(int *max_sockfd) {
     Announce_list *p = announce_list_head;
 
     while(p != NULL) {count++; p=p->next;}
-    tracker_count count;
+    tracker_count = count;
     sock = (int*)malloc(count*sizeof(int));
     if(sock == NULL) goto OUT;
     tracker = (struct sockaddr_in*)malloc(count * sizeof(struct sockaddr_in));
@@ -213,11 +208,11 @@ int prepare_connect_tracker(int *max_sockfd) {
         //人主机名获取IP地址
         ht = gethostbyname(tracker_name);
         if(ht == NULL) {
-            printf("gethostbyname failed:%s\n", hstreror(h_errno));
+            printf("gethostbyname failed:%s\n", hstrerror(h_errno));
             valid[i] = 0;
         } else {
             memset(&tracker[i], 0, sizeof(struct sockaddr_in));
-            memcpy(&tracker[i].sin_adr.s_addr, ht->h_addr_list[0], 4);
+            memcpy(&tracker[i].sin_addr.s_addr, ht->h_addr_list[0], 4);
             tracker[i].sin_port = htons(tracker_port);
             tracker[i].sin_family = AF_INET;
             valid[i]  = -1;
@@ -228,7 +223,7 @@ int prepare_connect_tracker(int *max_sockfd) {
 
     for(i = 0; i<tracker_count;i++) {
         if(valid[i] != 0) {
-            if(sock[i] > *max_sockfs) *max_sockfd = sock[i];
+            if(sock[i] > *max_sockfd) *max_sockfd = sock[i];
             flags = fcntl(sock[i], F_GETFL,0);
             fcntl(sock[i], F_SETFL, flags|O_NONBLOCK);
             //连接到tracker
@@ -250,7 +245,7 @@ OUT:
 int prepare_connect_peer(int *max_sockfd) {
 
     int i, flags, ret, count = 0;
-    peer_addr *p;
+    Peer_addr *p;
     p = peer_addr_head;
     while( p!= 0) {count++; p=p->next;}
     peer_count = count;
@@ -442,7 +437,7 @@ int add_peer_node_to_peerlist(int *sock, struct sockaddr_in saptr) {
     node->socket= *sock;
     node->port = ntohs(saptr.sin_port);
     node->state = INITIAL;
-    strcpy(node->ip, inet_ntoa(saptr,sin_addr));
+    strcpy(node->ip, inet_ntoa(saptr.sin_addr));
     node->start_timestamp = time(NULL);
 
     return 0;

@@ -1,3 +1,4 @@
+#define DEBUG
 #include <stdio.h>
 #include <ctype.h>
 #include <malloc.h>
@@ -32,7 +33,7 @@ int read_metafile(char *metafile_name) {
         printf("%s:%d can not open file\n", __FILE__, __LINE__);
         return -1;
     }
-
+    //获取种子文件的长度,filesize为全局变量,在parse_metafile.c头部定义
     fseek(fp, 0, SEEK_END);
     filesize = ftell(fp);
     if(filesize == -1) {
@@ -46,7 +47,8 @@ int read_metafile(char *metafile_name) {
         return -1;
     }
 
-    fseek(fp,0, SEEK_SET);
+    //读取种子文件的内容到metafile_content缓冲区中
+    fseek(fp, 0, SEEK_SET);
     for(i = 0; i < filesize; i++)
         metafile_content[i] = fgetc(fp);
     metafile_content[i] = '\0';
@@ -124,8 +126,7 @@ int read_announce_list() {
                     announce_list_head = node;
                 } else {
                     p = announce_list_head;
-                    while(p->next != NULL)
-                        p = p->next;
+                    while(p->next != NULL)p = p->next;
                     p->next = node;
                 }
             }
@@ -135,15 +136,14 @@ int read_announce_list() {
             i++; //跳过 'e'
             if(i >= filesize) return -1;
         } //while
-
     }
 
     #ifdef DEBUG
-        p = announce_list_head;
+        /*p = announce_list_head;
         while(p!= NULL) {
             printf("%s\n", p->announce);
             p =  p->next;
-        }
+        }*/
 
         for(p = announce_list_head; p != NULL; p=p->next)
             printf("%s\n", p->announce);
@@ -171,7 +171,6 @@ int add_an_announce(char *url) {
     p = announce_list_head;
     if( p == NULL ){ announce_list_head =  q; return 1; }
     while(p->next != NULL) p = p->next;
-
     p->next = q;
     return 1;
 }
@@ -206,7 +205,7 @@ int get_piece_length() {
     }
 
     #ifdef DEBUG
-        printf("piece length:&d\n",piece_lentgh);
+        printf("piece length:&d\n",piece_length);
     #endif
 
     return 0;
@@ -251,7 +250,7 @@ int get_file_name() {
         }
         i++; //跳过":"
         file_name = (char*)malloc(count+1);
-        memccpy(file_name, &metafile_content[i], count);
+        memcpy(file_name, &metafile_content[i], count);
         file_name[count]= '\0';
 
     } else {
@@ -339,6 +338,15 @@ int get_files_length_path(){
         }
     }
 
+    #ifdef DEBUG
+	// 由于可能含有中文字符,因此可能打印出乱码
+	p = files_head;
+	while(p != NULL) {
+        printf("%ld:%s\n",p->length,p->path);
+        p = p->next;
+	}
+    #endif
+
     return 0;
 }
 
@@ -354,7 +362,7 @@ int get_info_hash() {
 
     i = i + 6; //跳过 "4:info"
 
-    for(; i > filesize;)
+    for(; i < filesize;)
         if(metafile_content[i] == 'd'){
             push_pop++;
             i++;
@@ -396,9 +404,9 @@ int get_info_hash() {
     SHA1Final(info_hash, &context);
 
     #ifdef DEBUG
-        printf("info_hash:")
-        for(i = 0; i < 20;i++)
-            printf(".2x",info_hash[i]);
+        printf("info_hash:");
+        for(int i = 0; i < 20;i++)
+            printf("%.2x",info_hash[i]);
 
         printf("\n");
     #endif // DEBUG

@@ -1,13 +1,6 @@
 #ifndef TRACKER_H
 #define TRACKER_H
-#define MINGW32
-
-#ifdef MINGW32
-#include <winsock2.h>
-#else
 #include <netinet/in.h>
-#endif
-
 #include "parse_metafile.h"
 
 typedef struct _Peer_addr{

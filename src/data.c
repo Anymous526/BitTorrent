@@ -135,6 +135,7 @@ int get_files_count(){
 }
 
 int create_files() {
+
     int ret,i;
     char buff[1] = {0x0};
 
@@ -153,7 +154,7 @@ int create_files() {
     } else {
         ret = chdir(file_name);
         if(ret < 0) { //改变目录失败,说明该目录还未创建
-            ret = mkdir(file_name);
+            ret = mkdir(file_name,0777);
             if(ret < 0) {printf("%s:%d error", __FILE__,__LINE__); return -1;}
             ret = chdir(file_name);
             if(ret < 0) {printf("%s:%d error", __FILE__,__LINE__); return -1;}
@@ -387,7 +388,7 @@ int write_piece_to_harddisk(int sequence, Peer *peer) {
         slice_count--;
     }
     //当前处于终端模式,则在peer链表中删除所有对该piece的请求
-    if(end_mode == 1) delete_request_end_mode(index_copy);
+    if(end_mode == 1)  delete_request_end_mode(index_copy);
     //更新位图
     set_bit_value(bitmap, index_copy,1);
     //保存piece的index,准备给所有的peer发送have消息
@@ -433,6 +434,35 @@ int read_piece_from_harddisk(Btcache *p, int index) {
 		begin += 16*1024;
 		slice_count--;
 		node_ptr = node_ptr->next;
+	}
+
+	return 0;
+}
+
+// 在peer队列中删除对某个piece的请求
+int delete_request_end_mode(int index)
+{
+	Peer          *p = peer_head;
+	Request_piece *req_p, *req_q;
+
+	if(index < 0 || index >= pieces_length/20)  return -1;
+
+	while(p != NULL) {
+		req_p = p->Request_piece_head;
+		while(req_p != NULL) {
+			if(req_p->index == index) {
+				if(req_p == p->Request_piece_head) p->Request_piece_head = req_p->next;
+				else req_q->next = req_p->next;
+				free(req_p);
+
+				req_p = p->Request_piece_head;
+				continue;
+			}
+			req_q = req_p;
+			req_p = req_p->next;
+		}
+
+		p = p->next;
 	}
 
 	return 0;

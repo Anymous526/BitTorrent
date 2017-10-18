@@ -1,4 +1,3 @@
-#define  MINGW32
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
@@ -6,14 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-
-#ifdef MINGW32
-#include <winsock2.h>
-#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#endif
-
 #include "parse_metafile.h"
 #include "bitfield.h"
 #include "peer.h"
@@ -306,7 +299,7 @@ int process_handshake_msg(Peer *peer, unsigned char *buff, int len) {
         peer->state = CLOSING;
         //丢弃发送缓冲区中的数据
         discard_send_buffer(peer);
-        clean_btcache_buffore_peer_close(peer);
+        clear_btcache_before_peer_close(peer);
         close(peer->socket);
         return -1;
     }
@@ -646,7 +639,7 @@ int parse_response(Peer *peer) {
             process_uninterested_msg(peer, buff+index, 5);
             index += 5;
         } else if( ((len-index) >= 9) && (buff[index+4]) == HAVE ) {
-            process_hava_msg(peer, buff+index, 9);
+            process_have_msg(peer, buff+index, 9);
             index += 9;
         } else if( ((len-index) >= 5) && (buff[index+4]) == BITFIELD ) {
             process_bitfield_msg(peer, buff+index, peer->bitmap.bitfield_length +5);
@@ -762,7 +755,7 @@ int create_response_message(Peer *peer) {
         if(ret < 0) { printf("read_slice_for_send ERROR\n");}
         else {
             if(peer->last_up_timestamp == 0)
-                peer->last_up_timestamp = tiime(NULL);
+                peer->last_up_timestamp = time(NULL);
             peer->up_count += req_p->length;
             peer->up_total += req_p->length;
 

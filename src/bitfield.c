@@ -199,5 +199,5 @@ int test(){
     map2.valid_length = 1l;
 
     int ret = is_interested(&map1, &map2);
-    prinf("%d\n", is_interested(&map1, &map2));
+    printf("%d\n", is_interested(&map1, &map2));
 }
