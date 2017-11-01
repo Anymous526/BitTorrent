@@ -197,7 +197,7 @@ int test(){
     map2.bitfield = bf2;
     map2.bitfield_length = 2;
     map2.valid_length = 1l;
-
-    int ret = is_interested(&map1, &map2);
+    is_interested(&map1, &map2);
+    //int ret = 1
     printf("%d\n", is_interested(&map1, &map2));
 }

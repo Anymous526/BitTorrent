@@ -1,0 +1,199 @@
+# depslib dependency file v1.0
+1508290988 source:e:\developer\codeblocks\bittorrent\src\bitfield.c
+	<stdio.h>
+	<unistd.h>
+	<string.h>
+	<malloc.h>
+	<fcntl.h>
+	<sys/types.h>
+	<sys/stat.h>
+	"parse_metafile.h"
+	"bitfield.h"
+
+1507606058 e:\developer\codeblocks\bittorrent\src\parse_metafile.h
+
+1507689522 e:\developer\codeblocks\bittorrent\src\bitfield.h
+
+1506743185 source:e:\developer\codeblocks\bittorrent\src\bterror.c
+	<stdio.h>
+	<unistd.h>
+	<stdlib.h>
+	"bterror.h"
+
+1507718699 e:\developer\codeblocks\bittorrent\src\bterror.h
+
+1508298566 source:e:\developer\codeblocks\bittorrent\src\data.c
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	<string.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<malloc.h>
+	"parse_metafile.h"
+	"bitfield.h"
+	"message.h"
+	"sha1.h"
+	"data.h"
+
+1508229405 e:\developer\codeblocks\bittorrent\src\message.h
+	"peer.h"
+
+1508234104 e:\developer\codeblocks\bittorrent\src\peer.h
+	<string.h>
+	<time.h>
+	"bitfield.h"
+
+1201081980 e:\developer\codeblocks\bittorrent\src\sha1.h
+	<sys/types.h>
+
+1508111545 e:\developer\codeblocks\bittorrent\src\data.h
+	"peer.h"
+
+1507718924 source:e:\developer\codeblocks\bittorrent\src\log.c
+	<stdio.h>
+	<unistd.h>
+	<stdlib.h>
+	<string.h>
+	<sys/stat.h>
+	<sys/types.h>
+	<fcntl.h>
+	<stdarg.h>
+	"log.h"
+
+1507718843 e:\developer\codeblocks\bittorrent\src\log.h
+
+1508228908 source:e:\developer\codeblocks\bittorrent\src\main.c
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	<string.h>
+	<malloc.h>
+	"parse_metafile.h"
+	"signal_hander.h"
+	"bitfield.h"
+	"data.h"
+	"policy.h"
+	"tracker.h"
+	"torrent.h"
+	"log.h"
+
+1507769148 e:\developer\codeblocks\bittorrent\src\signal_hander.h
+
+1508228944 e:\developer\codeblocks\bittorrent\src\policy.h
+	"peer.h"
+
+1508290615 e:\developer\codeblocks\bittorrent\src\tracker.h
+	<netinet/in.h>
+	"parse_metafile.h"
+
+1508223130 e:\developer\codeblocks\bittorrent\src\torrent.h
+	"tracker.h"
+
+1508292481 source:e:\developer\codeblocks\bittorrent\src\message.c
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<unistd.h>
+	<stdlib.h>
+	<time.h>
+	<string.h>
+	<sys/socket.h>
+	<arpa/inet.h>
+	"parse_metafile.h"
+	"bitfield.h"
+	"peer.h"
+	"policy.h"
+	"data.h"
+	"message.h"
+
+1508298171 source:e:\developer\codeblocks\bittorrent\src\parse_metafile.c
+	<stdio.h>
+	<ctype.h>
+	<malloc.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+	"parse_metafile.h"
+	"sha1.h"
+
+1508292491 source:e:\developer\codeblocks\bittorrent\src\peer.c
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	"peer.h"
+	"message.h"
+	"bitfield.h"
+
+1508239898 source:e:\developer\codeblocks\bittorrent\src\policy.c
+	<stdio.h>
+	<stdlib.h>
+	<time.h>
+	"parse_metafile.h"
+	"peer.h"
+	"data.h"
+	"message.h"
+	"policy.h"
+
+1201081980 source:e:\developer\codeblocks\bittorrent\src\sha1.c
+	<string.h>
+	"sha1.h"
+
+1508239906 source:e:\developer\codeblocks\bittorrent\src\signal_hander.c
+	<stdio.h>
+	<unistd.h>
+	<stdlib.h>
+	<signal.h>
+	"parse_metafile.h"
+	"bitfield.h"
+	"peer.h"
+	"data.h"
+	"tracker.h"
+	"torrent.h"
+	"signal_hander.h"
+
+1508292515 source:e:\developer\codeblocks\bittorrent\src\torrent.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<unistd.h>
+	<time.h>
+	<fcntl.h>
+	<netinet/in.h>
+	<sys/types.h>
+	<arpa/inet.h>
+	<sys/time.h>
+	<sys/socket.h>
+	<sys/select.h>
+	<netdb.h>
+	<errno.h>
+	"torrent.h"
+	"message.h"
+	"tracker.h"
+	"peer.h"
+	"policy.h"
+	"data.h"
+	"bitfield.h"
+	"parse_metafile.h"
+
+1508292559 source:e:\developer\codeblocks\bittorrent\src\tracker.c
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	<errno.h>
+	<ctype.h>
+	<unistd.h>
+	<fcntl.h>
+	<stdlib.h>
+	<time.h>
+	<sys/time.h>
+	<sys/types.h>
+	<netinet/in.h>
+	<sys/socket.h>
+	<arpa/inet.h>
+	<netdb.h>
+	"parse_metafile.h"
+	"peer.h"
+	"tracker.h"
+
